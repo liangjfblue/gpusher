@@ -1,0 +1,7 @@
+server:
+  port: 8881
+  name: "gateway"
+
+log:
+  name: "gateway-vlog"
+  level: 5
