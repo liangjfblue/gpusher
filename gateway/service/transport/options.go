@@ -6,13 +6,16 @@
  */
 package transport
 
-import "time"
+import (
+	"time"
+)
 
 var (
 	defaultOptions = Options{
 		Address: "8888",
 		Network: "tcp",
 		Timeout: 5 * time.Second,
+		RpcPort: ":9991",
 	}
 )
 
@@ -21,6 +24,7 @@ type Options struct {
 	Network         string
 	KeepAlivePeriod time.Duration
 	Timeout         time.Duration
+	RpcPort         string
 }
 
 func Addr(address string) Option {
@@ -44,5 +48,11 @@ func KeepAlivePeriod(keepAlivePeriod time.Duration) Option {
 func Timeout(timeout time.Duration) Option {
 	return func(o *Options) {
 		o.Timeout = timeout
+	}
+}
+
+func RpcPort(rpcPort string) Option {
+	return func(o *Options) {
+		o.RpcPort = rpcPort
 	}
 }

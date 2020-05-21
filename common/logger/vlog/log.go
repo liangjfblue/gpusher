@@ -29,6 +29,7 @@ func (l *VLog) initVLog() {
 	logrus.SetFormatter(&logrus.TextFormatter{})
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(logrus.Level(l.opts.Level))
+	logrus.SetReportCaller(true)
 }
 
 func (l *VLog) Trace(format string, args ...interface{}) {

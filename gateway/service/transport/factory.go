@@ -21,3 +21,9 @@ type FactoryWSTransport struct{}
 func NewFactoryWSTransport(opts ...Option) ITransport {
 	return NewWSTransport(opts...)
 }
+
+type FactoryRPCTransport struct{}
+
+func NewFactoryRPCTransport(opts ...Option) ITransport {
+	return NewRpcTransport(opts...)
+}

@@ -9,10 +9,15 @@ package transport
 import (
 	"context"
 	"net"
+	"time"
+
+	"github.com/liangjfblue/gpusher/gateway/defind"
+
+	"github.com/liangjfblue/gpusher/gateway/service"
+
+	"github.com/liangjfblue/gpusher/common/logger/log"
 
 	"github.com/liangjfblue/gpusher/common/codes"
-
-	"github.com/lunny/log"
 )
 
 type tcpTransport struct {
@@ -35,16 +40,16 @@ func (t *tcpTransport) Init(opts ...Option) {
 		o(&t.opts)
 	}
 }
+
 func (t *tcpTransport) ListenServer(ctx context.Context) error {
 	lis, err := net.Listen(t.opts.Network, t.opts.Address)
 	if err != nil {
 		return err
 	}
 
-	//Reactor模型, 为listen socket开启goroutine
 	go func() {
 		if err = t.serve(ctx, lis); err != nil {
-			log.Errorf("transport serve error, %v", err)
+			log.Error("transport serve error, %v", err)
 		}
 	}()
 
@@ -52,6 +57,8 @@ func (t *tcpTransport) ListenServer(ctx context.Context) error {
 }
 
 func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
+	log.Debug("=====tcp server start success, port:%s=====", t.opts.Address)
+
 	listener, ok := lis.(*net.TCPListener)
 	if !ok {
 		return codes.ErrNetworkNotSupported
@@ -74,7 +81,7 @@ func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
 			return err
 		}
 
-		go t.dealConn(ctx, wrapConn(conn))
+		go t.dealTCPConn(ctx, wrapConn(conn))
 	}
 }
 
@@ -92,33 +99,43 @@ func (t *tcpTransport) setConn(conn *net.TCPConn) (*net.TCPConn, error) {
 	return conn, nil
 }
 
-func (t *tcpTransport) dealConn(ctx context.Context, conn *connWrapper) error {
+func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 	defer conn.Close()
+
+	addr := conn.RemoteAddr().String()
+	log.Debug("new conn coming, addr:%s", addr)
+
+	//TODO 读取一帧, 解析得到key, token
+	key, token, version, heartbeat := "", "", "", 0
+	log.Debug(key, token, version, heartbeat)
+
+	//TODO 检查heartbeat的间隔
+
+	//TODO 检验token
+
+	//创建一个Connection结构代替原始conn, 并等待channel的推送消息
+	connection := service.NewConnect(conn, defind.TcpProtocol, version)
+	connection.HandleWriteMsg(key)
+
+	//把key对应的connection加入对应appChannel
+
+	begin := time.Now().UnixNano()
+	end := begin + int64(time.Second)
 
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			log.Error(ctx.Err().Error())
 		default:
 		}
 
-		//frame, err := t.read(ctx, conn)
-		//if err == io.EOF {
-		//	return nil
-		//}
-
-		//if err != nil {
-		//	return err
-		//}
-
-		//rsp, err := t.handle(ctx, frame)
-		//if err != nil {
-		//	return err
-		//}
-
-		////写返回结构给客户端
-		//if err = t.write(ctx, conn, rsp); err != nil {
-		//	return err
-		//}
+		//间隔性检查heartbeat有效性, 超过时间
+		if end-begin >= int64(time.Second) {
+			if err := conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(heartbeat))); err != nil {
+				log.Error("<%s> key:%s, error: %v", addr, key, err)
+				break
+			}
+			begin = end
+		}
 	}
 }

@@ -16,16 +16,27 @@ import (
 type Config struct {
 	Server
 	Log
+	Channel
 }
 
 type Server struct {
-	Port int
-	Name string
+	Port    string
+	Name    string
+	Network string
+	Proto   string
+	RpcPort string
 }
 
 type Log struct {
 	Name  string
 	Level int
+}
+
+type Channel struct {
+	BucketNum     int
+	OneChannelNum int
+	AppChannelNum int
+	AllChannelNum int
 }
 
 var (
@@ -41,7 +52,7 @@ func Init(filePath string) *Config {
 		}
 
 		if err := yaml.Unmarshal(data, &c); err != nil {
-
+			panic(err)
 		}
 	})
 	return &c

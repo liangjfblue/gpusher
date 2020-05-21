@@ -9,6 +9,7 @@ package transport
 import (
 	"context"
 	"net"
+	"time"
 )
 
 type ITransport interface {
@@ -20,12 +21,14 @@ type Option func(*Options)
 
 type connWrapper struct {
 	net.Conn
+	CurTime int64
 	//framer Framer
 }
 
 func wrapConn(rawConn net.Conn) *connWrapper {
 	return &connWrapper{
-		Conn: rawConn,
+		Conn:    rawConn,
+		CurTime: time.Now().Unix(),
 		//framer: NewFramer(),
 	}
 }
