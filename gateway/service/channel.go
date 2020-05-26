@@ -20,9 +20,9 @@ type IChannel interface {
 	//Write 写返回结果给客户端
 	Write(string, []byte) error
 	//创建一个客户端连接
-	AddConn(key string, conn *Connection)
+	AddConn(string, *Connection)
 	//删除一个客户端连接
-	DelConn(key string)
+	DelConn(string)
 	//Close 关闭客户channel
 	Close() error
 }

@@ -31,7 +31,7 @@ func InitClientChannel(conf *config.Config) {
 	})
 }
 
-func GetInstance() *ChannelBucketList {
+func GetUserChannel() *ChannelBucketList {
 	return _clientChannel
 }
 

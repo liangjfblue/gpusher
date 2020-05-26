@@ -8,8 +8,10 @@ package transport
 
 import (
 	"context"
+	"io"
 	"net"
-	"time"
+
+	"github.com/liangjfblue/gpusher/common/codec"
 
 	"github.com/liangjfblue/gpusher/gateway/defind"
 
@@ -18,6 +20,10 @@ import (
 	"github.com/liangjfblue/gpusher/common/logger/log"
 
 	"github.com/liangjfblue/gpusher/common/codes"
+)
+
+var (
+	HeartbeatReply = []byte("ok")
 )
 
 type tcpTransport struct {
@@ -100,42 +106,76 @@ func (t *tcpTransport) setConn(conn *net.TCPConn) (*net.TCPConn, error) {
 }
 
 func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
+	select {
+	case <-ctx.Done():
+		log.Error(ctx.Err().Error())
+		return
+	default:
+	}
+
 	defer conn.Close()
 
 	addr := conn.RemoteAddr().String()
 	log.Debug("new conn coming, addr:%s", addr)
 
 	//TODO 读取一帧, 解析得到key, token
-	key, token, version, heartbeat := "", "", "", 0
+	framer, err := t.read(conn)
+	if err == io.EOF {
+		log.Error("read compeleted")
+		return
+	}
+
+	if err != nil {
+		log.Error("first read data framer err:%s", err.Error())
+		return
+	}
+
+	//if codec.IsHeartBeatMsg(framer) {
+	//
+	//}
+
+	appId, key, token, version, heartbeat := 0, "", "", "", 0
 	log.Debug(key, token, version, heartbeat)
 
-	//TODO 检查heartbeat的间隔
+	//TODO 优化心跳检测间隔, 检查heartbeat的间隔
 
 	//TODO 检验token
 
 	//创建一个Connection结构代替原始conn, 并等待channel的推送消息
-	connection := service.NewConnect(conn, defind.TcpProtocol, version)
-	connection.HandleWriteMsg(key)
+	userConn, err := service.GetUserChannel().Get(appId, key, true)
+	if err != nil {
+		log.Error("get userConn err:%s", err.Error())
+		return
+	}
 
 	//把key对应的connection加入对应appChannel
-
-	begin := time.Now().UnixNano()
-	end := begin + int64(time.Second)
+	connection := service.NewConnect(conn, defind.TcpProtocol, codec.GetVersion(framer))
+	userConn.AddConn(key, connection)
+	defer userConn.DelConn(key)
 
 	for {
-		select {
-		case <-ctx.Done():
-			log.Error(ctx.Err().Error())
-		default:
+		framer, err := t.read(conn)
+		if err == io.EOF {
+			log.Error("read compeleted")
+			return
 		}
 
-		//间隔性检查heartbeat有效性, 超过时间
-		if end-begin >= int64(time.Second) {
-			if err := conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(heartbeat))); err != nil {
-				log.Error("<%s> key:%s, error: %v", addr, key, err)
-				break
+		if codec.IsHeartBeatMsg(framer) {
+			cc := codec.GetCodec(codec.Default)
+			resp, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
+			if err != nil {
+				log.Error("codec Encode data err:%s", err.Error())
+				return
 			}
-			begin = end
+
+			if _, err := conn.framer.Write(resp); err != nil {
+				log.Error("conn write HeartbeatReply, err:%s", err.Error())
+				return
+			}
 		}
 	}
+}
+
+func (s *tcpTransport) read(conn *connWrapper) ([]byte, error) {
+	return conn.framer.ReadFramer()
 }

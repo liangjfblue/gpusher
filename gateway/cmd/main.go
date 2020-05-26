@@ -12,7 +12,9 @@ import (
 
 func main() {
 	//初始刷配置
-	c := config.Init("./conf.yml")
+	//win 	H:\go_home\opensource\gpusher\gateway\cmd\conf.yml
+	//linux "./conf.yml"
+	c := config.Init("H:\\go_home\\opensource\\gpusher\\gateway\\cmd\\conf.yml")
 
 	//初始化日志
 	l := new(factory.VLogFactor).CreateLog(

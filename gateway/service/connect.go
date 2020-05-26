@@ -9,6 +9,8 @@ package service
 import (
 	"net"
 
+	"github.com/liangjfblue/gpusher/common/codec"
+
 	"github.com/liangjfblue/gpusher/gateway/defind"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
@@ -17,11 +19,11 @@ import (
 type Connection struct {
 	Conn    net.Conn
 	Proto   string
-	Version string
+	Version uint32
 	MsgChan chan []byte
 }
 
-func NewConnect(conn net.Conn, proto string, version string) *Connection {
+func NewConnect(conn net.Conn, proto string, version uint32) *Connection {
 	return &Connection{
 		Conn:    conn,
 		Proto:   proto,
@@ -39,9 +41,15 @@ func (c *Connection) HandleWriteMsg(key string) {
 		for msg := range c.MsgChan {
 			switch c.Proto {
 			case defind.TcpProtocol:
-				n, err = c.Conn.Write(msg)
+				//tcp自定义协议
+				cc := codec.GetCodec(codec.Default)
+				resp, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, msg)
+				if err != nil {
+					log.Error("codec Encode data err:%s", err.Error())
+					return
+				}
+				n, err = c.Conn.Write(resp)
 			case defind.WsProtocol:
-				//tcp自定义协议 封包
 				n, err = c.Conn.Write(msg)
 			default:
 				log.Error("not support proto type")

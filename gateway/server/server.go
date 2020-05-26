@@ -40,6 +40,8 @@ func (s *Server) Init() error {
 	//初始化etcd
 
 	//生成gatewayId, 向注册中心注册
+	//gatewayId := uuid.NewUuid()
+	//gatewayId + ip:port
 
 	//加载缓存message节点列表
 

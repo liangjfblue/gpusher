@@ -10,6 +10,8 @@ import (
 	"context"
 	"net"
 	"time"
+
+	"github.com/liangjfblue/gpusher/common/message"
 )
 
 type ITransport interface {
@@ -22,13 +24,13 @@ type Option func(*Options)
 type connWrapper struct {
 	net.Conn
 	CurTime int64
-	//framer Framer
+	framer  message.IFramer
 }
 
 func wrapConn(rawConn net.Conn) *connWrapper {
 	return &connWrapper{
 		Conn:    rawConn,
 		CurTime: time.Now().Unix(),
-		//framer: NewFramer(),
+		framer:  message.NewFramer(rawConn),
 	}
 }

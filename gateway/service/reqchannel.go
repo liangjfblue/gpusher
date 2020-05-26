@@ -6,10 +6,14 @@
  */
 package service
 
-import "sync"
+import (
+	"container/list"
+	"sync"
+)
 
 type UserChannel struct {
 	mutex *sync.RWMutex
+	cl    list.List
 }
 
 func NewUserChannel() IChannel {
@@ -40,6 +44,8 @@ func (u *UserChannel) Write(string, []byte) error {
 
 //创建一个客户端连接
 func (u *UserChannel) AddConn(key string, conn *Connection) {
+
+	conn.HandleWriteMsg(key)
 	return
 }
 
