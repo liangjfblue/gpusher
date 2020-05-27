@@ -7,13 +7,12 @@
 package service
 
 import (
-	"container/list"
 	"sync"
 )
 
 type UserChannel struct {
 	mutex *sync.RWMutex
-	cl    list.List
+	//cl    list.List
 }
 
 func NewUserChannel() IChannel {
@@ -44,14 +43,17 @@ func (u *UserChannel) Write(string, []byte) error {
 
 //创建一个客户端连接
 func (u *UserChannel) AddConn(key string, conn *Connection) {
+	//判断当前channel分片是否达到最大conn保存数
+
+	//reply heartbeat to client
 
 	conn.HandleWriteMsg(key)
-	return
+
+	//redis保存当前网关连接数
 }
 
 //删除一个客户端连接
 func (u *UserChannel) DelConn(key string) {
-	return
 }
 
 //Close 关闭客户channel

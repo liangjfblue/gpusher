@@ -90,7 +90,7 @@ func (s *Server) Run() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGSEGV)
 
-	log.Debug("=====gateway start success=====")
+	log.GetLogger(defind.GatewayLog).Debug("=====gateway start success=====")
 	<-ch
 
 	s.Stop()

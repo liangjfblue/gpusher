@@ -10,3 +10,7 @@ const (
 	TcpProtocol = "tcp"
 	WsProtocol  = "ws"
 )
+
+const (
+	GatewayLog = "gateway"
+)

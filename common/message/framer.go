@@ -11,8 +11,6 @@ import (
 	"io"
 	"net"
 
-	"github.com/liangjfblue/gpusher/common/logger/log"
-
 	"github.com/liangjfblue/gpusher/common/codec"
 )
 
@@ -48,11 +46,10 @@ func (f *framer) ReadFramer() ([]byte, error) {
 	)
 
 	framerHead := make([]byte, codec.FrameHeadLen)
-	if n, err = io.ReadFull(f.rawConn, framerHead); err != nil && n != codec.FrameHeadLen {
+	if n, err = io.ReadFull(f.rawConn, framerHead); err != nil || n != codec.FrameHeadLen {
 		return nil, err
 	}
 
-	log.Debug(string(framerHead))
 	if !codec.CheckMagic(framerHead) {
 		return nil, ErrMagicIsError
 	}
@@ -63,7 +60,7 @@ func (f *framer) ReadFramer() ([]byte, error) {
 		return nil, ErrMaxPayloadLength
 	}
 
-	payload := make([]byte, 0, dl)
+	payload := make([]byte, dl)
 	if n, err = io.ReadFull(f.rawConn, payload); err != nil && n != codec.FrameHeadLen {
 		return nil, err
 	}

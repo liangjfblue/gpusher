@@ -42,34 +42,35 @@ func (c *Connection) HandleWriteMsg(key string) {
 			switch c.Proto {
 			case defind.TcpProtocol:
 				//tcp自定义协议
+				var resp []byte
 				cc := codec.GetCodec(codec.Default)
-				resp, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, msg)
+				resp, err = cc.Encode(&codec.FrameHeader{MsgType: 0x01}, msg)
 				if err != nil {
-					log.Error("codec Encode data err:%s", err.Error())
+					log.GetLogger(defind.GatewayLog).Error("codec Encode data err:%s", err.Error())
 					return
 				}
 				n, err = c.Conn.Write(resp)
 			case defind.WsProtocol:
 				n, err = c.Conn.Write(msg)
 			default:
-				log.Error("not support proto type")
+				log.GetLogger(defind.GatewayLog).Error("not support proto type")
 			}
-			log.Debug("key:%s, write msg n:%d", key, n)
+			log.GetLogger(defind.GatewayLog).Debug("key:%s, write msg n:%d", key, n)
 
 			if err != nil {
-				log.Error("key:%s, write msg err:%s", key, err.Error())
+				log.GetLogger(defind.GatewayLog).Error("key:%s, write msg err:%s", key, err.Error())
 			}
 		}
-		log.Debug("key:%s, conn goroutine closed", key)
+		log.GetLogger(defind.GatewayLog).Debug("key:%s, conn goroutine closed", key)
 	}()
 }
 
 func (c *Connection) WriteMsg(key string, msg []byte) {
 	select {
 	case c.MsgChan <- msg:
-		log.Debug("key:%s write msg:%s", key, string(msg))
+		log.GetLogger(defind.GatewayLog).Debug("key:%s write msg:%s", key, string(msg))
 	default:
 		c.Conn.Close()
-		log.Error("key:%s write msg:%s; close conn", key, string(msg))
+		log.GetLogger(defind.GatewayLog).Error("key:%s write msg:%s; close conn", key, string(msg))
 	}
 }

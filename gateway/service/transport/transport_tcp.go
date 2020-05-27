@@ -8,8 +8,11 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net"
+
+	"github.com/liangjfblue/gpusher/gateway/proto"
 
 	"github.com/liangjfblue/gpusher/common/codec"
 
@@ -23,7 +26,8 @@ import (
 )
 
 var (
-	HeartbeatReply = []byte("ok")
+	HeartbeatReply             = []byte("ok")
+	ErrConnReqPayloadInfoReply = []byte("conn req payload info err")
 )
 
 type tcpTransport struct {
@@ -55,7 +59,7 @@ func (t *tcpTransport) ListenServer(ctx context.Context) error {
 
 	go func() {
 		if err = t.serve(ctx, lis); err != nil {
-			log.Error("transport serve error, %v", err)
+			log.GetLogger(defind.GatewayLog).Error("transport serve error, %v", err)
 		}
 	}()
 
@@ -63,7 +67,7 @@ func (t *tcpTransport) ListenServer(ctx context.Context) error {
 }
 
 func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
-	log.Debug("=====tcp server start success, port:%s=====", t.opts.Address)
+	log.GetLogger(defind.GatewayLog).Debug("=====tcp server start success, port:%s=====", t.opts.Address)
 
 	listener, ok := lis.(*net.TCPListener)
 	if !ok {
@@ -106,36 +110,54 @@ func (t *tcpTransport) setConn(conn *net.TCPConn) (*net.TCPConn, error) {
 }
 
 func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
+	defer conn.Close()
+
 	select {
 	case <-ctx.Done():
-		log.Error(ctx.Err().Error())
+		log.GetLogger(defind.GatewayLog).Error(ctx.Err().Error())
 		return
 	default:
 	}
 
-	defer conn.Close()
-
 	addr := conn.RemoteAddr().String()
-	log.Debug("new conn coming, addr:%s", addr)
+	log.GetLogger(defind.GatewayLog).Debug("new conn coming, addr:%s", addr)
 
-	//TODO 读取一帧, 解析得到key, token
+	//读取连接client信息
 	framer, err := t.read(conn)
-	if err == io.EOF {
-		log.Error("read compeleted")
-		return
-	}
-
 	if err != nil {
-		log.Error("first read data framer err:%s", err.Error())
+		if err == io.EOF {
+			log.GetLogger(defind.GatewayLog).Warn("client conn close err:%s", err.Error())
+		} else {
+			log.GetLogger(defind.GatewayLog).Error("read err:%s", err.Error())
+		}
 		return
 	}
 
-	//if codec.IsHeartBeatMsg(framer) {
-	//
-	//}
+	//decode data
+	cc := codec.GetCodec(codec.Default)
+	connReq, err := cc.Decode(framer)
+	if err != nil {
+		log.GetLogger(defind.GatewayLog).Error("decode p")
+		return
+	}
 
-	appId, key, token, version, heartbeat := 0, "", "", "", 0
-	log.Debug(key, token, version, heartbeat)
+	//检验appId key token参数
+	var connPayload proto.ConnPayload
+	if err = json.Unmarshal(connReq, &connPayload); err != nil {
+		log.GetLogger(defind.GatewayLog).Error("connect gateway payload err:%s", err.Error())
+		return
+	}
+
+	if connPayload.AppId == 0 || connPayload.Key == "" || connPayload.Token == "" {
+		log.GetLogger(defind.GatewayLog).Error("conn req payload info error")
+		if _, err := conn.framer.Write(ErrConnReqPayloadInfoReply); err != nil {
+			log.GetLogger(defind.GatewayLog).Error("conn req payload info err, err:%s", err.Error())
+			return
+		}
+	}
+
+	appId, key, token := connPayload.AppId, connPayload.Key, connPayload.Token
+	log.GetLogger(defind.GatewayLog).Debug("appId:%d, key:%s, token:%s", appId, key, token)
 
 	//TODO 优化心跳检测间隔, 检查heartbeat的间隔
 
@@ -144,38 +166,43 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 	//创建一个Connection结构代替原始conn, 并等待channel的推送消息
 	userConn, err := service.GetUserChannel().Get(appId, key, true)
 	if err != nil {
-		log.Error("get userConn err:%s", err.Error())
+		log.GetLogger(defind.GatewayLog).Error("get userConn err:%s", err.Error())
 		return
 	}
 
-	//把key对应的connection加入对应appChannel
+	//把key对应的connection加入对应appChannel, 创建一个goroutine负责写推送消息给客户端
 	connection := service.NewConnect(conn, defind.TcpProtocol, codec.GetVersion(framer))
 	userConn.AddConn(key, connection)
 	defer userConn.DelConn(key)
 
 	for {
+		//read heartbeat
 		framer, err := t.read(conn)
-		if err == io.EOF {
-			log.Error("read compeleted")
-			return
+		if err != nil {
+			if err == io.EOF {
+				log.GetLogger(defind.GatewayLog).Warn("client conn close err:%s", err.Error())
+			} else {
+				log.GetLogger(defind.GatewayLog).Error("read err:%s", err.Error())
+			}
+			break
 		}
 
 		if codec.IsHeartBeatMsg(framer) {
 			cc := codec.GetCodec(codec.Default)
 			resp, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
 			if err != nil {
-				log.Error("codec Encode data err:%s", err.Error())
+				log.GetLogger(defind.GatewayLog).Error("codec Encode data err:%s", err.Error())
 				return
 			}
 
 			if _, err := conn.framer.Write(resp); err != nil {
-				log.Error("conn write HeartbeatReply, err:%s", err.Error())
+				log.GetLogger(defind.GatewayLog).Error("conn write HeartbeatReply, err:%s", err.Error())
 				return
 			}
 		}
 	}
 }
 
-func (s *tcpTransport) read(conn *connWrapper) ([]byte, error) {
+func (t *tcpTransport) read(conn *connWrapper) ([]byte, error) {
 	return conn.framer.ReadFramer()
 }

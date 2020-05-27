@@ -10,6 +10,8 @@ import (
 	"context"
 	"net"
 
+	"github.com/liangjfblue/gpusher/gateway/defind"
+
 	"github.com/liangjfblue/gpusher/common/codes"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
@@ -49,7 +51,7 @@ func (t *rpcTransport) ListenServer(ctx context.Context) error {
 
 	go func() {
 		if err = t.serve(ctx, lis); err != nil {
-			log.Error("transport serve error, %v", err)
+			log.GetLogger(defind.GatewayLog).Error("transport serve error, %v", err)
 		}
 	}()
 
@@ -57,7 +59,7 @@ func (t *rpcTransport) ListenServer(ctx context.Context) error {
 }
 
 func (t *rpcTransport) serve(ctx context.Context, lis net.Listener) error {
-	log.Debug("=====rpc server start success, port:%s=====", t.opts.RpcPort)
+	log.GetLogger(defind.GatewayLog).Debug("=====rpc server start success, port:%s=====", t.opts.RpcPort)
 
 	listener, ok := lis.(*net.TCPListener)
 	if !ok {

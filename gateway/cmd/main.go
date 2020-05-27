@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/liangjfblue/gpusher/common/logger/log"
+	"github.com/liangjfblue/gpusher/gateway/defind"
 	"github.com/liangjfblue/gpusher/gateway/server"
 
 	"github.com/liangjfblue/gpusher/common/logger/factory"
@@ -21,7 +22,7 @@ func main() {
 		logger.Name(c.Log.Name),
 		logger.Level(c.Log.Level),
 	)
-	log.RegisterLogger(l)
+	log.RegisterLogger(defind.GatewayLog, l)
 
 	s := server.NewServer(c)
 	if err := s.Init(); err != nil {

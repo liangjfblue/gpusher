@@ -14,6 +14,7 @@ import (
 	"github.com/liangjfblue/gpusher/common/logger/log"
 
 	"github.com/liangjfblue/gpusher/gateway/config"
+	"github.com/liangjfblue/gpusher/gateway/defind"
 )
 
 var (
@@ -124,10 +125,10 @@ func (c *ChannelBucketList) New(appId int, key string) (IChannel, *ChannelBucket
 	defer bb.UnLock()
 
 	if cc, ok := bb.Data[key]; ok {
-		log.Debug("appId:%d, key:%s is existed", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("appId:%d, key:%s is existed", appId, key)
 		return cc, bb, nil
 	} else {
-		log.Debug("appId:%d, key:%s new conn", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("new conn: appId:%d, key:%s", appId, key)
 		cc := NewUserChannel()
 		bb.Data[key] = cc
 
@@ -147,11 +148,11 @@ func (c *ChannelBucketList) Get(appId int, key string, newFlag bool) (IChannel, 
 	defer bb.UnLock()
 
 	if cc, ok := bb.Data[key]; ok {
-		log.Debug("appId:%d, key:%s is existed", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("appId:%d, key:%s is existed", appId, key)
 		return cc, nil
 	} else {
 		if newFlag {
-			log.Debug("appId:%d, key:%s new conn", appId, key)
+			log.GetLogger(defind.GatewayLog).Debug("new conn appId:%d, key:%s", appId, key)
 			cc := NewUserChannel()
 			bb.Data[key] = cc
 			return cc, nil
@@ -173,11 +174,11 @@ func (c *ChannelBucketList) Remove(appId int, key string) error {
 	defer bb.UnLock()
 
 	if _, ok := bb.Data[key]; ok {
-		log.Debug("remove channel, appId:%d, key:%s", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("remove channel, appId:%d, key:%s", appId, key)
 		delete(bb.Data, key)
 		return nil
 	} else {
-		log.Warn("key channel not exist, appId:%d, key:%s", appId, key)
+		log.GetLogger(defind.GatewayLog).Warn("key channel not exist, appId:%d, key:%s", appId, key)
 		return ErrChannelBucketChannelNotExist
 	}
 }
@@ -198,7 +199,7 @@ func (c *ChannelBucketList) Close() {
 
 	for _, channel := range channelTmp {
 		if err := channel.Close(); err != nil {
-			log.Error("channel close err:%v", err.Error())
+			log.GetLogger(defind.GatewayLog).Error("channel close err:%v", err.Error())
 		}
 	}
 }
