@@ -4,7 +4,7 @@
  * @create on 2020/5/21
  * @version 1.0
  */
-package service
+package connect
 
 import (
 	"errors"
@@ -47,12 +47,14 @@ func (u *ConnChannel) CheckToken(string, string) error {
 	return nil
 }
 
-//PushMsg 推送消息
-func (u *ConnChannel) PushMsg(string, []byte) error {
+//PushMsg 写推送消息到通道
+func (u *ConnChannel) PushMsg(key string, msg []byte) error {
+	//TODO 私有消息
+	u.write(key, msg)
 	return nil
 }
 
-//Write 写客户端
+//Write 写推送消息到通道
 func (u *ConnChannel) Write(key string, msg []byte) error {
 	u.write(key, msg)
 	return nil
@@ -62,7 +64,7 @@ func (u *ConnChannel) write(key string, msg []byte) {
 	//发送给多有订阅key的client
 	for _, v := range u.cl {
 		c := v.(*Connection)
-		go c.WriteMsg(key, msg)
+		go c.WriteMsg2Connect(key, msg)
 	}
 }
 
@@ -76,7 +78,7 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (int, error) {
 		return 0, ErrMaxSubscriberPerChannel
 	}
 
-	//reply heartbeat to client
+	//连接成功首次心跳回复
 	cc := codec.GetCodec(codec.Default)
 	heartbeatReply, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
 	if err != nil {
@@ -88,9 +90,9 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (int, error) {
 		return 0, err
 	}
 
-	conn.HandleWriteMsg(key)
+	conn.HandleWriteMsg2Connect(key)
 
-	//redis保存当前网关连接数
+	//TODO redis保存当前网关连接数
 
 	//client conn 加入订阅key的链表
 	u.cl = append(u.cl, conn)
@@ -101,12 +103,12 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (int, error) {
 	return connSubKeyIndex, nil
 }
 
-//删除一个客户端连接
+//DelConn 删除客户端连接抽象(客户端close时调用)
 func (u *ConnChannel) DelConn(key string, index int) error {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	//bug, index是会变化的
+	//TODO bug, index是会变化的
 	if len(u.cl) <= index {
 		return ErrNoThisSubConn
 	}
@@ -124,7 +126,7 @@ func (u *ConnChannel) DelConn(key string, index int) error {
 	return nil
 }
 
-//Close 关闭客户channel
+//Close 关闭所有客户端连接, 删除所有客户端抽象(server退出时主动调用)
 func (u *ConnChannel) Close() error {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()

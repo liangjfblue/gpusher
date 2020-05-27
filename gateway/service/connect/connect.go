@@ -4,7 +4,7 @@
  * @create on 2020/5/21
  * @version 1.0
  */
-package service
+package connect
 
 import (
 	"net"
@@ -16,6 +16,7 @@ import (
 	"github.com/liangjfblue/gpusher/common/logger/log"
 )
 
+//Connection 客户端连接抽象层
 type Connection struct {
 	conn    net.Conn
 	proto   string
@@ -23,6 +24,7 @@ type Connection struct {
 	msgChan chan []byte
 }
 
+//NewConnect 创建客户端连接抽象
 func NewConnect(conn net.Conn, proto string, version uint32) *Connection {
 	return &Connection{
 		conn:    conn,
@@ -32,7 +34,8 @@ func NewConnect(conn net.Conn, proto string, version uint32) *Connection {
 	}
 }
 
-func (c *Connection) HandleWriteMsg(key string) {
+//HandleWriteMsg2Connect 客户端推送消息通道监听和写客户端
+func (c *Connection) HandleWriteMsg2Connect(uuid string) {
 	go func() {
 		var (
 			n   int
@@ -55,22 +58,23 @@ func (c *Connection) HandleWriteMsg(key string) {
 			default:
 				log.GetLogger(defind.GatewayLog).Error("not support proto type")
 			}
-			log.GetLogger(defind.GatewayLog).Debug("key:%s, write msg n:%d", key, n)
+			log.GetLogger(defind.GatewayLog).Debug("uuid:%s, write msg n:%d", uuid, n)
 
 			if err != nil {
-				log.GetLogger(defind.GatewayLog).Error("key:%s, write msg err:%s", key, err.Error())
+				log.GetLogger(defind.GatewayLog).Error("uuid:%s, write msg err:%s", uuid, err.Error())
 			}
 		}
-		log.GetLogger(defind.GatewayLog).Debug("key:%s, conn goroutine closed", key)
+		log.GetLogger(defind.GatewayLog).Debug("uuid:%s, conn goroutine closed", uuid)
 	}()
 }
 
-func (c *Connection) WriteMsg(key string, msg []byte) {
+//WriteMsg2Connect 对外暴露, 用于推送消息到chan的转换
+func (c *Connection) WriteMsg2Connect(uuid string, msg []byte) {
 	select {
 	case c.msgChan <- msg:
-		log.GetLogger(defind.GatewayLog).Debug("key:%s write msg:%s", key, string(msg))
+		log.GetLogger(defind.GatewayLog).Debug("uuid:%s write msg:%s", uuid, string(msg))
 	default:
 		c.conn.Close()
-		log.GetLogger(defind.GatewayLog).Error("key:%s write msg:%s; close conn", key, string(msg))
+		log.GetLogger(defind.GatewayLog).Error("uuid:%s write msg:%s; close conn", uuid, string(msg))
 	}
 }

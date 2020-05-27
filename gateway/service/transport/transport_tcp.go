@@ -13,13 +13,13 @@ import (
 	"net"
 	"time"
 
+	"github.com/liangjfblue/gpusher/gateway/service/connect"
+
 	"github.com/liangjfblue/gpusher/gateway/proto"
 
 	"github.com/liangjfblue/gpusher/common/codec"
 
 	"github.com/liangjfblue/gpusher/gateway/defind"
-
-	"github.com/liangjfblue/gpusher/gateway/service"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
 
@@ -183,14 +183,14 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 	//TODO 检验token
 
 	//创建一个Connection结构代替原始conn, 并等待channel的推送消息
-	userConn, err := service.GetClientChannel().Get(appId, key, true)
+	userConn, err := connect.GetClientChannel().Get(key, true)
 	if err != nil {
 		log.GetLogger(defind.GatewayLog).Error("get userConn err:%s", err.Error())
 		return
 	}
 
 	//把key对应的connection加入对应appChannel, 创建一个goroutine负责写推送消息给客户端
-	connection := service.NewConnect(conn, defind.TcpProtocol, codec.GetVersion(framer))
+	connection := connect.NewConnect(conn, defind.TcpProtocol, codec.GetVersion(framer))
 	index, err := userConn.AddConn(key, connection)
 	if err != nil {
 		log.GetLogger(defind.GatewayLog).Error("add user conn channel err:%s", err.Error())

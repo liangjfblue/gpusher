@@ -13,10 +13,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/liangjfblue/gpusher/gateway/service/connect"
+
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/gateway/defind"
-	"github.com/liangjfblue/gpusher/gateway/service"
-
 	"github.com/liangjfblue/gpusher/gateway/service/transport"
 
 	"github.com/liangjfblue/gpusher/gateway/config"
@@ -46,7 +46,7 @@ func (s *Server) Init() error {
 	//加载缓存message节点列表
 
 	//初始化客户端本地缓存
-	service.InitClientChannel(s.config)
+	connect.InitClientChannel(s.config)
 
 	//初始化定时调度线程
 
@@ -98,5 +98,5 @@ func (s *Server) Run() {
 
 func (s *Server) Stop() {
 	log.GetLogger(defind.GatewayLog).Debug("=====gateway Stop clean=====")
-	service.GetClientChannel().Close()
+	connect.GetClientChannel().Close()
 }

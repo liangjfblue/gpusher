@@ -13,7 +13,7 @@ import (
 func main() {
 	fmt.Println("client test")
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", "172.16.7.17:8881")
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", "172.16.7.16:8881")
 	if err != nil {
 		log.Fatal("Resolve TCPAddr error", err)
 	}

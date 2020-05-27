@@ -4,7 +4,7 @@
  * @create on 2020/5/20
  * @version 1.0
  */
-package service
+package connect
 
 import (
 	"errors"
@@ -61,7 +61,7 @@ func (c *ChannelBucket) RUnlock() {
 //ChannelBucketList channel桶
 type ChannelBucketList struct {
 	bucketNum int
-	AppBucket map[int][]*ChannelBucket
+	Buckets   []*ChannelBucket
 }
 
 //NewBucketList 创建channel桶
@@ -73,62 +73,48 @@ func NewBucketList(conf *config.Config) *ChannelBucketList {
 		c.bucketNum = 16
 	}
 
-	c.AppBucket = make(map[int][]*ChannelBucket)
+	c.initAppBucket()
+
 	return c
+}
+
+//initAppBucket 初始化桶
+func (c *ChannelBucketList) initAppBucket() {
+	c.Buckets = make([]*ChannelBucket, 0, c.bucketNum)
+	for i := 0; i < c.bucketNum; i++ {
+		c.Buckets = append(c.Buckets, &ChannelBucket{
+			Data:  make(map[string]IChannel),
+			mutex: &sync.RWMutex{},
+		})
+	}
 }
 
 //CountAll 计算gateway的客户端总数
 func (c *ChannelBucketList) CountAll() (count int64) {
-	for _, app := range c.AppBucket {
-		for _, bucket := range app {
-			count += int64(len(bucket.Data))
-		}
+	for _, b := range c.Buckets {
+		count += int64(len(b.Data))
 	}
 	return
-}
-
-//CountApp 计算app的客户端总数
-func (c *ChannelBucketList) CountApp(appId int) (count int64) {
-	if val, ok := c.AppBucket[appId]; ok {
-		for _, bucket := range val {
-			count += int64(len(bucket.Data))
-		}
-	}
-	return
-}
-
-//initAppBucket 初始化桶
-func (c *ChannelBucketList) initAppBucket(appId int) {
-	if _, ok := c.AppBucket[appId]; !ok {
-		for i := 0; i < c.bucketNum; i++ {
-			c.AppBucket[appId] = append(c.AppBucket[appId], &ChannelBucket{
-				Data:  make(map[string]IChannel),
-				mutex: &sync.RWMutex{},
-			})
-		}
-	}
 }
 
 //calBucket 计算bucket的位置
-func (c *ChannelBucketList) calBucket(appId int, key string) int {
-	return int(crc32.ChecksumIEEE([]byte(key))) % len(c.AppBucket[appId])
+func (c *ChannelBucketList) calBucket(key string) int {
+	return int(crc32.ChecksumIEEE([]byte(key))) % len(c.Buckets)
 }
 
 //New 创建新的客户端channel
-func (c *ChannelBucketList) New(appId int, key string) (IChannel, *ChannelBucket, error) {
-	c.initAppBucket(appId)
-
-	index := c.calBucket(appId, key)
-	bb := c.AppBucket[appId][index]
+func (c *ChannelBucketList) New(key string) (IChannel, *ChannelBucket, error) {
+	index := c.calBucket(key)
+	bb := c.Buckets[index]
 
 	bb.Lock()
 	defer bb.UnLock()
 
 	if cc, ok := bb.Data[key]; ok {
-		log.GetLogger(defind.GatewayLog).Debug("appId:%d, key:%s is existed", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("key:%s is existed", key)
 		return cc, bb, nil
 	} else {
-		log.GetLogger(defind.GatewayLog).Debug("new conn: appId:%d, key:%s", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("new conn: key:%s", key)
 		cc := NewConnChannel()
 		bb.Data[key] = cc
 
@@ -137,22 +123,20 @@ func (c *ChannelBucketList) New(appId int, key string) (IChannel, *ChannelBucket
 }
 
 //Add 添加channel到本地缓存
-func (c *ChannelBucketList) Get(appId int, key string, newFlag bool) (IChannel, error) {
-	c.initAppBucket(appId)
-
+func (c *ChannelBucketList) Get(key string, newFlag bool) (IChannel, error) {
 	//计算出hash的桶
-	index := c.calBucket(appId, key)
-	bb := c.AppBucket[appId][index]
+	index := c.calBucket(key)
+	bb := c.Buckets[index]
 
 	bb.Lock()
 	defer bb.UnLock()
 
 	if cc, ok := bb.Data[key]; ok {
-		log.GetLogger(defind.GatewayLog).Debug("appId:%d, key:%s is existed", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("key:%s is existed", key)
 		return cc, nil
 	} else {
 		if newFlag {
-			log.GetLogger(defind.GatewayLog).Debug("new conn appId:%d, key:%s", appId, key)
+			log.GetLogger(defind.GatewayLog).Debug("new conn key:%s", key)
 			cc := NewConnChannel()
 			bb.Data[key] = cc
 			return cc, nil
@@ -163,22 +147,20 @@ func (c *ChannelBucketList) Get(appId int, key string, newFlag bool) (IChannel, 
 }
 
 //Remove 删除channel本地缓存
-func (c *ChannelBucketList) Remove(appId int, key string) error {
-	c.initAppBucket(appId)
-
+func (c *ChannelBucketList) Remove(key string) error {
 	//计算出hash的桶
-	index := c.calBucket(appId, key)
-	bb := c.AppBucket[appId][index]
+	index := c.calBucket(key)
+	bb := c.Buckets[index]
 
 	bb.Lock()
 	defer bb.UnLock()
 
 	if _, ok := bb.Data[key]; ok {
-		log.GetLogger(defind.GatewayLog).Debug("remove channel, appId:%d, key:%s", appId, key)
+		log.GetLogger(defind.GatewayLog).Debug("remove channel,key:%s", key)
 		delete(bb.Data, key)
 		return nil
 	} else {
-		log.GetLogger(defind.GatewayLog).Warn("key channel not exist, appId:%d, key:%s", appId, key)
+		log.GetLogger(defind.GatewayLog).Warn("key channel not exist, key:%s", key)
 		return ErrChannelBucketChannelNotExist
 	}
 }
@@ -187,14 +169,12 @@ func (c *ChannelBucketList) Remove(appId int, key string) error {
 func (c *ChannelBucketList) Close() {
 	channelTmp := make([]IChannel, 0, c.CountAll())
 
-	for _, app := range c.AppBucket {
-		for _, bucket := range app {
-			bucket.RLock()
-			for _, channel := range bucket.Data {
-				channelTmp = append(channelTmp, channel)
-			}
-			bucket.RUnlock()
+	for _, b := range c.Buckets {
+		b.RLock()
+		for _, channel := range b.Data {
+			channelTmp = append(channelTmp, channel)
 		}
+		b.RUnlock()
 	}
 
 	for _, channel := range channelTmp {

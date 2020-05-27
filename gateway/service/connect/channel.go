@@ -4,7 +4,7 @@
  * @create on 2020/5/20
  * @version 1.0
  */
-package service
+package connect
 
 //IChannel 客户端分配channel通信
 //不直接用conn维护客户端连接, 而是用channel, 是为了和通信协议解耦, 支持任意通信协议(tcp, ws, udp...)
