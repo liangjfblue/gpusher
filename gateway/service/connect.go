@@ -17,18 +17,18 @@ import (
 )
 
 type Connection struct {
-	Conn    net.Conn
-	Proto   string
-	Version uint32
-	MsgChan chan []byte
+	conn    net.Conn
+	proto   string
+	version uint32
+	msgChan chan []byte
 }
 
 func NewConnect(conn net.Conn, proto string, version uint32) *Connection {
 	return &Connection{
-		Conn:    conn,
-		Proto:   proto,
-		Version: version,
-		MsgChan: make(chan []byte),
+		conn:    conn,
+		proto:   proto,
+		version: version,
+		msgChan: make(chan []byte),
 	}
 }
 
@@ -38,8 +38,8 @@ func (c *Connection) HandleWriteMsg(key string) {
 			n   int
 			err error
 		)
-		for msg := range c.MsgChan {
-			switch c.Proto {
+		for msg := range c.msgChan {
+			switch c.proto {
 			case defind.TcpProtocol:
 				//tcp自定义协议
 				var resp []byte
@@ -49,9 +49,9 @@ func (c *Connection) HandleWriteMsg(key string) {
 					log.GetLogger(defind.GatewayLog).Error("codec Encode data err:%s", err.Error())
 					return
 				}
-				n, err = c.Conn.Write(resp)
+				n, err = c.conn.Write(resp)
 			case defind.WsProtocol:
-				n, err = c.Conn.Write(msg)
+				n, err = c.conn.Write(msg)
 			default:
 				log.GetLogger(defind.GatewayLog).Error("not support proto type")
 			}
@@ -67,10 +67,10 @@ func (c *Connection) HandleWriteMsg(key string) {
 
 func (c *Connection) WriteMsg(key string, msg []byte) {
 	select {
-	case c.MsgChan <- msg:
+	case c.msgChan <- msg:
 		log.GetLogger(defind.GatewayLog).Debug("key:%s write msg:%s", key, string(msg))
 	default:
-		c.Conn.Close()
+		c.conn.Close()
 		log.GetLogger(defind.GatewayLog).Error("key:%s write msg:%s; close conn", key, string(msg))
 	}
 }

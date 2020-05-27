@@ -75,6 +75,8 @@ func (s *Server) Init() error {
 }
 
 func (s *Server) Run() {
+	defer s.Stop()
+
 	//启动rpc服务
 	if err := s.rpcTransport.ListenServer(context.TODO()); err != nil {
 		panic(err)
@@ -92,10 +94,9 @@ func (s *Server) Run() {
 
 	log.GetLogger(defind.GatewayLog).Debug("=====gateway start success=====")
 	<-ch
-
-	s.Stop()
 }
 
 func (s *Server) Stop() {
-	//TODO 清理资源
+	log.GetLogger(defind.GatewayLog).Debug("=====gateway Stop clean=====")
+	service.GetClientChannel().Close()
 }

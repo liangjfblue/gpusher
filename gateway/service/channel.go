@@ -6,8 +6,6 @@
  */
 package service
 
-import "sync"
-
 //IChannel 客户端分配channel通信
 //不直接用conn维护客户端连接, 而是用channel, 是为了和通信协议解耦, 支持任意通信协议(tcp, ws, udp...)
 type IChannel interface {
@@ -20,22 +18,9 @@ type IChannel interface {
 	//Write 写返回结果给客户端
 	Write(string, []byte) error
 	//创建一个客户端连接
-	AddConn(string, *Connection)
+	AddConn(string, *Connection) (int, error)
 	//删除一个客户端连接
-	DelConn(string)
+	DelConn(string, int) error
 	//Close 关闭客户channel
 	Close() error
-}
-
-//Channel gateway本地缓存的连接抽象map
-type Channel struct {
-	Data  map[string]IChannel
-	mutex *sync.RWMutex
-}
-
-func New() *Channel {
-	return &Channel{
-		Data:  make(map[string]IChannel),
-		mutex: new(sync.RWMutex),
-	}
 }

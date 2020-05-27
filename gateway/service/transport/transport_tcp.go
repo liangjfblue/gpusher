@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"net"
+	"time"
 
 	"github.com/liangjfblue/gpusher/gateway/proto"
 
@@ -74,6 +75,7 @@ func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
 		return codes.ErrNetworkNotSupported
 	}
 
+	var delayTmp time.Duration
 	for {
 		select {
 		case <-ctx.Done():
@@ -83,6 +85,18 @@ func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
 
 		conn, err := listener.AcceptTCP()
 		if err != nil {
+			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+				if delayTmp == 0 {
+					delayTmp = 5 * time.Millisecond
+				} else {
+					delayTmp *= 2
+				}
+				if max := 1 * time.Second; delayTmp > max {
+					delayTmp = max
+				}
+				time.Sleep(delayTmp)
+				continue
+			}
 			return err
 		}
 
@@ -110,7 +124,12 @@ func (t *tcpTransport) setConn(conn *net.TCPConn) (*net.TCPConn, error) {
 }
 
 func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
-	defer conn.Close()
+	defer func() {
+		conn.Close()
+		if err := recover(); err != nil {
+			log.GetLogger(defind.GatewayLog).Error("client error")
+		}
+	}()
 
 	select {
 	case <-ctx.Done():
@@ -137,7 +156,7 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 	cc := codec.GetCodec(codec.Default)
 	connReq, err := cc.Decode(framer)
 	if err != nil {
-		log.GetLogger(defind.GatewayLog).Error("decode p")
+		log.GetLogger(defind.GatewayLog).Error("decode payload err:%s", err.Error())
 		return
 	}
 
@@ -150,7 +169,7 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 
 	if connPayload.AppId == 0 || connPayload.Key == "" || connPayload.Token == "" {
 		log.GetLogger(defind.GatewayLog).Error("conn req payload info error")
-		if _, err := conn.framer.Write(ErrConnReqPayloadInfoReply); err != nil {
+		if _, err := conn.Conn.Write(ErrConnReqPayloadInfoReply); err != nil {
 			log.GetLogger(defind.GatewayLog).Error("conn req payload info err, err:%s", err.Error())
 			return
 		}
@@ -164,7 +183,7 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 	//TODO 检验token
 
 	//创建一个Connection结构代替原始conn, 并等待channel的推送消息
-	userConn, err := service.GetUserChannel().Get(appId, key, true)
+	userConn, err := service.GetClientChannel().Get(appId, key, true)
 	if err != nil {
 		log.GetLogger(defind.GatewayLog).Error("get userConn err:%s", err.Error())
 		return
@@ -172,8 +191,17 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 
 	//把key对应的connection加入对应appChannel, 创建一个goroutine负责写推送消息给客户端
 	connection := service.NewConnect(conn, defind.TcpProtocol, codec.GetVersion(framer))
-	userConn.AddConn(key, connection)
-	defer userConn.DelConn(key)
+	index, err := userConn.AddConn(key, connection)
+	if err != nil {
+		log.GetLogger(defind.GatewayLog).Error("add user conn channel err:%s", err.Error())
+		return
+	}
+	defer func() {
+		if err := userConn.DelConn(key, index); err != nil {
+			log.GetLogger(defind.GatewayLog).Error("del user conn channel err:%s", err.Error())
+			return
+		}
+	}()
 
 	for {
 		//read heartbeat
@@ -182,7 +210,7 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 			if err == io.EOF {
 				log.GetLogger(defind.GatewayLog).Warn("client conn close err:%s", err.Error())
 			} else {
-				log.GetLogger(defind.GatewayLog).Error("read err:%s", err.Error())
+				log.GetLogger(defind.GatewayLog).Error("for read err:%s", err.Error())
 			}
 			break
 		}
@@ -195,7 +223,7 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 				return
 			}
 
-			if _, err := conn.framer.Write(resp); err != nil {
+			if _, err := conn.Conn.Write(resp); err != nil {
 				log.GetLogger(defind.GatewayLog).Error("conn write HeartbeatReply, err:%s", err.Error())
 				return
 			}

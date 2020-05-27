@@ -32,7 +32,7 @@ func InitClientChannel(conf *config.Config) {
 	})
 }
 
-func GetUserChannel() *ChannelBucketList {
+func GetClientChannel() *ChannelBucketList {
 	return _clientChannel
 }
 
@@ -129,7 +129,7 @@ func (c *ChannelBucketList) New(appId int, key string) (IChannel, *ChannelBucket
 		return cc, bb, nil
 	} else {
 		log.GetLogger(defind.GatewayLog).Debug("new conn: appId:%d, key:%s", appId, key)
-		cc := NewUserChannel()
+		cc := NewConnChannel()
 		bb.Data[key] = cc
 
 		return cc, bb, nil
@@ -153,7 +153,7 @@ func (c *ChannelBucketList) Get(appId int, key string, newFlag bool) (IChannel, 
 	} else {
 		if newFlag {
 			log.GetLogger(defind.GatewayLog).Debug("new conn appId:%d, key:%s", appId, key)
-			cc := NewUserChannel()
+			cc := NewConnChannel()
 			bb.Data[key] = cc
 			return cc, nil
 		} else {

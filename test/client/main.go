@@ -13,7 +13,7 @@ import (
 func main() {
 	fmt.Println("client test")
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", "172.16.7.17:8881")
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", "172.16.7.17:8881")
 	if err != nil {
 		log.Fatal("Resolve TCPAddr error", err)
 	}
@@ -22,11 +22,6 @@ func main() {
 	if err != nil {
 		log.Fatal("connect server error", err)
 	}
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
 
 	type ConnPayload struct {
 		AppId int    `json:"appId"`
@@ -66,6 +61,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("read len:%d, message:%v\n", n, buffer[:n])
+
 	time.Sleep(2 * time.Second)
 
 	go func() {
@@ -74,7 +77,7 @@ func main() {
 		r, err := cc.Encode(&codec.FrameHeader{
 			Magic:        codec.Magic,
 			Version:      codec.Version,
-			MsgType:      0x01,
+			MsgType:      0x00,
 			ReqType:      0x0,
 			CompressType: 0x0,
 			StreamID:     1,
@@ -98,4 +101,8 @@ func main() {
 	}()
 
 	time.Sleep(3 * time.Second)
+
+	if err := conn.Close(); err != nil {
+		log.Fatal(err)
+	}
 }
