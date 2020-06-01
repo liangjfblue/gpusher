@@ -20,11 +20,12 @@ type Config struct {
 }
 
 type Server struct {
-	Port    string
-	Name    string
-	Network string
-	Proto   string
-	RpcPort string
+	Port          int
+	Name          string
+	Network       string
+	Proto         string
+	RpcPort       int
+	DiscoveryAddr string
 }
 
 type Log struct {
@@ -33,10 +34,7 @@ type Log struct {
 }
 
 type Channel struct {
-	BucketNum     int
-	OneChannelNum int
-	AppChannelNum int
-	AllChannelNum int
+	BucketNum int
 }
 
 var (

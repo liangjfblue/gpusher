@@ -11,7 +11,7 @@ import (
 
 	"github.com/liangjfblue/gpusher/common/codec"
 
-	"github.com/liangjfblue/gpusher/gateway/defind"
+	"github.com/liangjfblue/gpusher/gateway/common"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
 )
@@ -33,7 +33,7 @@ func NewConnect(conn net.Conn, proto string) *Connection {
 }
 
 //HandleWriteMsg2Connect 客户端推送消息通道监听和写客户端
-func (c *Connection) HandleWriteMsg2Connect(uuid string) {
+func (c *Connection) HandleWriteMsg2Connect(appId int, uuid string) {
 	go func() {
 		var (
 			n   int
@@ -41,38 +41,38 @@ func (c *Connection) HandleWriteMsg2Connect(uuid string) {
 		)
 		for msg := range c.msgChan {
 			switch c.proto {
-			case defind.TcpProtocol:
+			case common.TcpProtocol:
 				//tcp自定义协议
 				var resp []byte
 				cc := codec.GetCodec(codec.Default)
 				resp, err = cc.Encode(&codec.FrameHeader{MsgType: 0x01}, msg)
 				if err != nil {
-					log.GetLogger(defind.GatewayLog).Error("codec Encode data err:%s", err.Error())
+					log.GetLogger(common.GatewayLog).Error("codec Encode data err:%s", err.Error())
 					return
 				}
 				n, err = c.conn.Write(resp)
-			case defind.WsProtocol:
+			case common.WsProtocol:
 				n, err = c.conn.Write(msg)
 			default:
-				log.GetLogger(defind.GatewayLog).Error("not support proto type")
+				log.GetLogger(common.GatewayLog).Error("not support proto type")
 			}
-			log.GetLogger(defind.GatewayLog).Debug("uuid:%s, write msg n:%d", uuid, n)
+			log.GetLogger(common.GatewayLog).Debug("appId:%d, uuid:%s, write msg n:%d", appId, uuid, n)
 
 			if err != nil {
-				log.GetLogger(defind.GatewayLog).Error("uuid:%s, write msg err:%s", uuid, err.Error())
+				log.GetLogger(common.GatewayLog).Error("appId:%d, uuid:%s, write msg err:%s", appId, uuid, err.Error())
 			}
 		}
-		log.GetLogger(defind.GatewayLog).Debug("uuid:%s, conn goroutine closed", uuid)
+		log.GetLogger(common.GatewayLog).Debug("appId:%d, uuid:%s, conn goroutine closed", appId, uuid)
 	}()
 }
 
 //WriteMsg2Connect 对外暴露, 用于推送消息到chan的转换
-func (c *Connection) WriteMsg2Connect(uuid string, msg []byte) {
+func (c *Connection) WriteMsg2Connect(appId int, uuid string, msg []byte) {
 	select {
 	case c.msgChan <- msg:
-		log.GetLogger(defind.GatewayLog).Debug("uuid:%s write msg:%s", uuid, string(msg))
+		log.GetLogger(common.GatewayLog).Debug("appId:%d,uuid:%s write msg:%s", appId, uuid, string(msg))
 	default:
 		c.conn.Close()
-		log.GetLogger(defind.GatewayLog).Error("uuid:%s write msg:%s; close conn", uuid, string(msg))
+		log.GetLogger(common.GatewayLog).Error("appId:%d,uuid:%s write msg:%s; close conn", appId, uuid, string(msg))
 	}
 }

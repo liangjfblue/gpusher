@@ -25,13 +25,15 @@ func main() {
 
 	type ConnPayload struct {
 		AppId int    `json:"appId"`
+		UUID  string `json:"uuid"`
 		Key   string `json:"key"`
 		Token string `json:"token"`
 	}
 
 	connReq := ConnPayload{
 		AppId: 1000,
-		Key:   "liangjf",
+		UUID:  "liangjf",
+		Key:   "app_gpusher",
 		Token: "test",
 	}
 	jConnReq, err := json.Marshal(connReq)

@@ -13,7 +13,7 @@ import (
 
 	"github.com/liangjfblue/gpusher/common/codec"
 	"github.com/liangjfblue/gpusher/common/logger/log"
-	"github.com/liangjfblue/gpusher/gateway/defind"
+	"github.com/liangjfblue/gpusher/gateway/common"
 )
 
 var (
@@ -29,7 +29,7 @@ var (
 //ConnChannel 每个client的读写channel
 type ConnChannel struct {
 	mutex *sync.RWMutex
-	cl    *list.List //一个key可以被多个client订阅
+	cl    *list.List //多端登陆
 	num   int
 }
 
@@ -52,28 +52,21 @@ func (u *ConnChannel) CheckToken(string, string) error {
 }
 
 //PushMsg 写推送消息到通道
-func (u *ConnChannel) PushMsg(key string, msg []byte) error {
-	//TODO 私有消息
-	u.write(key, msg)
+func (u *ConnChannel) PushMsg(appId int, uuid string, msg []byte) error {
+	u.write(appId, uuid, msg)
 	return nil
 }
 
-//Write 写推送消息到通道
-func (u *ConnChannel) Write(key string, msg []byte) error {
-	u.write(key, msg)
-	return nil
-}
-
-func (u *ConnChannel) write(key string, msg []byte) {
+func (u *ConnChannel) write(appId int, uuid string, msg []byte) {
 	//发送给多有订阅key的client
 	for i := u.cl.Front(); i != nil; i = u.cl.Front().Next() {
 		c := i.Value.(*Connection)
-		go c.WriteMsg2Connect(key, msg)
+		go c.WriteMsg2Connect(appId, uuid, msg)
 	}
 }
 
 //创建一个客户端连接
-func (u *ConnChannel) AddConn(key string, conn *Connection) (*list.Element, error) {
+func (u *ConnChannel) AddConn(appId int, uuid string, conn *Connection) (*list.Element, error) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -87,7 +80,7 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (*list.Element, erro
 	cc := codec.GetCodec(codec.Default)
 	heartbeatReply, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
 	if err != nil {
-		log.GetLogger(defind.GatewayLog).Error("codec Encode data err:%s", err.Error())
+		log.GetLogger(common.GatewayLog).Error("codec Encode data err:%s", err.Error())
 		return nil, err
 	}
 
@@ -95,21 +88,22 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (*list.Element, erro
 		return nil, err
 	}
 
-	conn.HandleWriteMsg2Connect(key)
+	conn.HandleWriteMsg2Connect(appId, uuid)
 
 	//TODO redis保存当前网关连接数
+	//appId uuid key	gatewayAddr
 
 	//client conn 加入订阅key的链表
 	e := u.cl.PushFront(conn)
 	u.num++
 
-	log.GetLogger(defind.GatewayLog).Debug("user add key:%s, now sub key conn num:%d", key, u.num)
+	log.GetLogger(common.GatewayLog).Debug("user add uuid:%s, now sub key conn num:%d", uuid, u.num)
 
 	return e, nil
 }
 
 //DelConn 删除客户端连接抽象(客户端close时调用)
-func (u *ConnChannel) DelConn(key string, e *list.Element) {
+func (u *ConnChannel) DelConn(appId int, uuid string, e *list.Element) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
@@ -129,7 +123,7 @@ func (u *ConnChannel) DelConn(key string, e *list.Element) {
 	}
 
 	//去掉订阅key的对应下标的client
-	log.GetLogger(defind.GatewayLog).Debug("del user conn channel key:%s, now sub key conn num:%d", key, u.num)
+	log.GetLogger(common.GatewayLog).Debug("del user conn channel, appId:%d, uuid:%s, now sub key conn num:%d", appId, uuid, u.num)
 }
 
 //Close 关闭所有客户端连接, 删除所有客户端抽象(server退出时主动调用)

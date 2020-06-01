@@ -1,16 +1,14 @@
 server:
-  port: ":8881"
+  port: 8881
   name: "gateway"
   network: "tcp"
   proto: "tcp"
-  rpcPort: ":9991"
+  rpcport: 9991
+  discoveryaddr: "172.16.7.16:9002,172.16.7.16:9004,172.16.7.16:9006"
 
 log:
   name: "gateway-vlog"
   level: 5
 
 channel:
-  bucketNum: 16
-  oneChannelNum: 10000
-  appChannelNum: 50000
-  allChannelNum: 100000
+  bucketnum: 16

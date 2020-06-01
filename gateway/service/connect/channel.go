@@ -16,13 +16,11 @@ type IChannel interface {
 	//CheckToken 校验客户端连接token权限
 	CheckToken(string, string) error
 	//PushMsg 推送消息
-	PushMsg(string, []byte) error
-	//Write 写返回结果给客户端
-	Write(string, []byte) error
+	PushMsg(int, string, []byte) error
 	//创建一个客户端连接
-	AddConn(string, *Connection) (*list.Element, error)
+	AddConn(int, string, *Connection) (*list.Element, error)
 	//删除一个客户端连接
-	DelConn(string, *list.Element)
+	DelConn(int, string, *list.Element)
 	//Close 关闭客户channel
 	Close() error
 }

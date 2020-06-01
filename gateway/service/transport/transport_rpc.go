@@ -8,9 +8,19 @@ package transport
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"time"
 
-	"github.com/liangjfblue/gpusher/gateway/defind"
+	"github.com/liangjfblue/gpusher/common/utils"
+
+	"github.com/liangjfblue/gpusher/common/discovery"
+
+	"github.com/liangjfblue/gpusher/gateway/service/rpc"
+
+	pb "github.com/liangjfblue/gpusher/gateway/proto/rpc/v1"
+
+	"github.com/liangjfblue/gpusher/gateway/common"
 
 	"github.com/liangjfblue/gpusher/common/codes"
 
@@ -44,14 +54,14 @@ func (t *rpcTransport) Init(opts ...Option) {
 }
 
 func (t *rpcTransport) ListenServer(ctx context.Context) error {
-	lis, err := net.Listen(t.opts.Network, t.opts.RpcPort)
+	lis, err := net.Listen(t.opts.Network, fmt.Sprintf(":%d", t.opts.RpcPort))
 	if err != nil {
 		return err
 	}
 
 	go func() {
 		if err = t.serve(ctx, lis); err != nil {
-			log.GetLogger(defind.GatewayLog).Error("transport serve error, %v", err)
+			log.GetLogger(common.GatewayLog).Error("transport serve error, %v", err)
 		}
 	}()
 
@@ -59,7 +69,7 @@ func (t *rpcTransport) ListenServer(ctx context.Context) error {
 }
 
 func (t *rpcTransport) serve(ctx context.Context, lis net.Listener) error {
-	log.GetLogger(defind.GatewayLog).Debug("=====rpc server start success, port:%s=====", t.opts.RpcPort)
+	log.GetLogger(common.GatewayLog).Debug("rpc server start success, port:%d", t.opts.RpcPort)
 
 	listener, ok := lis.(*net.TCPListener)
 	if !ok {
@@ -74,36 +84,20 @@ func (t *rpcTransport) serve(ctx context.Context, lis net.Listener) error {
 
 	s := grpc.NewServer()
 
+	ip, _ := utils.ExternalIP()
+	etcdRegister := discovery.NewRegister(t.opts.DiscoveryAddr, -1)
+
+	if err := etcdRegister.Register(ctx, discovery.ServiceDesc{
+		ServiceName: t.opts.SrvName,
+		Host:        ip,
+		Port:        t.opts.RpcPort,
+		TTL:         time.Second * 3,
+	}); err != nil {
+		return err
+	}
+
 	//注册gateway rpc服务
-	//pb.RegisterGreeterServer(s, &GatewayRPC{})
+	pb.RegisterGatewayServer(s, &rpc.GatewayRPC{})
 
 	return s.Serve(listener)
-}
-
-type GatewayRPC struct {
-}
-
-//New 创建新的客户端channel, 用于推送
-func (g *GatewayRPC) New() {
-
-}
-
-//Close 关闭客户端channel
-func (g *GatewayRPC) Close() {
-
-}
-
-//PushOne 推送给某App某用户
-func (g *GatewayRPC) PushOne() {
-
-}
-
-//PushApp 推送给某App所有用户
-func (g *GatewayRPC) PushApp() {
-
-}
-
-//PushAll 推送给所有App所有用户
-func (g *GatewayRPC) PushAll() {
-
 }
