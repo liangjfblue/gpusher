@@ -7,6 +7,7 @@
 package connect
 
 import (
+	"container/list"
 	"errors"
 	"sync"
 
@@ -16,7 +17,7 @@ import (
 )
 
 var (
-	MaxSubscriberPerChannel = 32
+	MaxSubscriberPerChannel = 10000
 )
 
 var (
@@ -28,12 +29,15 @@ var (
 //ConnChannel 每个client的读写channel
 type ConnChannel struct {
 	mutex *sync.RWMutex
-	cl    []interface{} //一个key可以被多个client订阅
+	cl    *list.List //一个key可以被多个client订阅
+	num   int
 }
 
 func NewConnChannel() IChannel {
 	return &ConnChannel{
 		mutex: &sync.RWMutex{},
+		cl:    list.New(),
+		num:   0,
 	}
 }
 
@@ -62,20 +66,21 @@ func (u *ConnChannel) Write(key string, msg []byte) error {
 
 func (u *ConnChannel) write(key string, msg []byte) {
 	//发送给多有订阅key的client
-	for _, v := range u.cl {
-		c := v.(*Connection)
+	for i := u.cl.Front(); i != nil; i = u.cl.Front().Next() {
+		c := i.Value.(*Connection)
 		go c.WriteMsg2Connect(key, msg)
 	}
 }
 
 //创建一个客户端连接
-func (u *ConnChannel) AddConn(key string, conn *Connection) (int, error) {
+func (u *ConnChannel) AddConn(key string, conn *Connection) (*list.Element, error) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
 	//判断当前channel分片是否达到最大conn保存数
-	if len(u.cl) > MaxSubscriberPerChannel {
-		return 0, ErrMaxSubscriberPerChannel
+	u.num = u.cl.Len()
+	if u.num > MaxSubscriberPerChannel {
+		return nil, ErrMaxSubscriberPerChannel
 	}
 
 	//连接成功首次心跳回复
@@ -83,11 +88,11 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (int, error) {
 	heartbeatReply, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
 	if err != nil {
 		log.GetLogger(defind.GatewayLog).Error("codec Encode data err:%s", err.Error())
-		return 0, err
+		return nil, err
 	}
 
 	if _, err := conn.conn.Write(heartbeatReply); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	conn.HandleWriteMsg2Connect(key)
@@ -95,35 +100,36 @@ func (u *ConnChannel) AddConn(key string, conn *Connection) (int, error) {
 	//TODO redis保存当前网关连接数
 
 	//client conn 加入订阅key的链表
-	u.cl = append(u.cl, conn)
-	connSubKeyIndex := len(u.cl) - 1
+	e := u.cl.PushFront(conn)
+	u.num++
 
-	log.GetLogger(defind.GatewayLog).Debug("user add key:%s, sub index:%d, now sub key conn num:%d", key, connSubKeyIndex, len(u.cl))
+	log.GetLogger(defind.GatewayLog).Debug("user add key:%s, now sub key conn num:%d", key, u.num)
 
-	return connSubKeyIndex, nil
+	return e, nil
 }
 
 //DelConn 删除客户端连接抽象(客户端close时调用)
-func (u *ConnChannel) DelConn(key string, index int) error {
+func (u *ConnChannel) DelConn(key string, e *list.Element) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	//TODO bug, index是会变化的
-	if len(u.cl) <= index {
-		return ErrNoThisSubConn
+	if e == nil {
+		return
 	}
 
-	cc, ok := u.cl[index].(*Connection)
-	if !ok {
-		return ErrTypeConn
-	}
+	for i := u.cl.Front(); i != nil; i = u.cl.Front().Next() {
+		if e.Value == i.Value {
+			u.cl.Remove(e)
 
-	close(cc.msgChan)
+			cc := e.Value.(*Connection)
+			close(cc.msgChan)
+			u.num--
+			break
+		}
+	}
 
 	//去掉订阅key的对应下标的client
-	u.cl = append(u.cl[:index], u.cl[index+1:]...)
-	log.GetLogger(defind.GatewayLog).Debug("del user conn channel key:%s, index:%d, now sub key conn num:%d", key, index, len(u.cl))
-	return nil
+	log.GetLogger(defind.GatewayLog).Debug("del user conn channel key:%s, now sub key conn num:%d", key, u.num)
 }
 
 //Close 关闭所有客户端连接, 删除所有客户端抽象(server退出时主动调用)
@@ -131,14 +137,12 @@ func (u *ConnChannel) Close() error {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	for _, v := range u.cl {
-		c := v.(*Connection)
+	for i := u.cl.Front(); i != nil; i = u.cl.Front().Next() {
+		c := i.Value.(*Connection)
 		if err := c.conn.Close(); err != nil {
 			return err
 		}
 	}
-
-	u.cl = u.cl[:0]
 
 	return nil
 }

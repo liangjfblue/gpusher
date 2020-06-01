@@ -20,16 +20,14 @@ import (
 type Connection struct {
 	conn    net.Conn
 	proto   string
-	version uint32
 	msgChan chan []byte
 }
 
 //NewConnect 创建客户端连接抽象
-func NewConnect(conn net.Conn, proto string, version uint32) *Connection {
+func NewConnect(conn net.Conn, proto string) *Connection {
 	return &Connection{
 		conn:    conn,
 		proto:   proto,
-		version: version,
 		msgChan: make(chan []byte),
 	}
 }
