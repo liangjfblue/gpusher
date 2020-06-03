@@ -8,16 +8,19 @@ package db
 
 import (
 	"testing"
+
+	"github.com/chasex/redis-go-cluster"
 )
 
 func TestNewRedisPool(t *testing.T) {
-	//p := NewRedisPool("172.16.7.16:8001", 10, time.Duration(300))
-	p, err := NewRedisCluster([]string{"172.16.7.16:8001", "172.16.7.16:8002", "172.16.7.16:8003", "172.16.7.16:8004", "172.16.7.16:8005", "172.16.7.16:8006"})
+	p, err := NewRedisCluster([]string{"172.16.7.16:8001", "172.16.7.16:8002", "172.16.7.16:8003"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Log(p.Set("name", "liangjf"))
-
-	t.Log(p.Get("name"))
+	if _, err = p.Get("name"); err != nil {
+		t.Fatal(err)
+	} else {
+		t.Log(redis.String(p.Get("name")))
+	}
 }

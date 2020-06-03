@@ -8,8 +8,7 @@ package rpc
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/liangjfblue/gpusher/common/defind"
 	"github.com/liangjfblue/gpusher/common/logger/log"

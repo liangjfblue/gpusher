@@ -13,4 +13,5 @@ const (
 
 const (
 	GatewayLog = "gateway"
+	WebLog     = "web"
 )
