@@ -172,7 +172,7 @@ func GetDataLen(framer []byte) uint32 {
 }
 
 func IsHeartBeatMsg(framer []byte) bool {
-	return true //framer[2] == HeartbeatMsg
+	return framer[2] == HeartbeatMsg
 }
 
 func GetVersion(framer []byte) uint32 {

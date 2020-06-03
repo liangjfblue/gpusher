@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 
-	"go.etcd.io/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3"
 )
 
 //ServiceDesc 服务描述信息

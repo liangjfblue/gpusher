@@ -45,7 +45,7 @@ func (c *Connection) HandleWriteMsg2Connect(appId int, uuid string) {
 				//tcp自定义协议
 				var resp []byte
 				cc := codec.GetCodec(codec.Default)
-				resp, err = cc.Encode(&codec.FrameHeader{MsgType: 0x01}, msg)
+				resp, err = cc.Encode(&codec.FrameHeader{MsgType: 0x00}, msg)
 				if err != nil {
 					log.GetLogger(common.GatewayLog).Error("codec Encode data err:%s", err.Error())
 					return

@@ -6,7 +6,9 @@
  */
 package transport
 
-import "context"
+import (
+	"context"
+)
 
 type wsTransport struct {
 	opts Options

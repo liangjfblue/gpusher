@@ -18,8 +18,8 @@ import (
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
+	"github.com/liangjfblue/gpusher/common/transport"
 	"github.com/liangjfblue/gpusher/gateway/common"
-	"github.com/liangjfblue/gpusher/gateway/service/transport"
 
 	"github.com/liangjfblue/gpusher/gateway/config"
 )

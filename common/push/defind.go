@@ -27,6 +27,7 @@ func (p PushMsg) String() string {
 		p.Tag, p.Body.Type, p.Body.UUID, p.Body.Content, p.Body.ExpireTime, p.Body.OfflinePush)
 }
 
+//推送类型
 const (
 	Push2One = iota + 1
 	Push2App
@@ -35,4 +36,16 @@ const (
 
 const (
 	MaxExpireTime = 3600 * 24 * 7 //消息最大过期时间7天
+)
+
+//app应用列表
+//TODO save in etcd
+const (
+	AppGpusher = iota + 1000
+)
+
+var (
+	AppM = map[string]int32{
+		"app_gpusher": AppGpusher,
+	}
 )

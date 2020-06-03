@@ -9,7 +9,9 @@ package push
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -116,15 +118,18 @@ func (q *KafkaSender) sendSync() {
 				return
 			}
 
-			body, err := json.Marshal(msg.Body)
+			data, err := json.Marshal(msg)
 			if err != nil {
 				log.Println("gpusher: json body error")
 				continue
 			}
 
+			fmt.Println("------------------")
+			fmt.Println(string(data))
+			fmt.Println("------------------")
 			kafkaMsg := sarama.ProducerMessage{
 				Topic: msg.Tag,
-				Value: sarama.StringEncoder(body),
+				Value: sarama.StringEncoder(data),
 				//Key:   sarama.StringEncoder(""),
 			}
 
@@ -156,7 +161,7 @@ func (q *KafkaSender) sendAsync() {
 				return
 			}
 
-			body, err := json.Marshal(msg.Body)
+			data, err := json.Marshal(msg)
 			if err != nil {
 				log.Println("gpusher: json body error")
 				continue
@@ -164,7 +169,7 @@ func (q *KafkaSender) sendAsync() {
 
 			kafkaMsg := sarama.ProducerMessage{
 				Topic: msg.Tag,
-				Value: sarama.StringEncoder(body),
+				Value: sarama.StringEncoder(data),
 				//Key:   sarama.StringEncoder(""),
 			}
 
@@ -195,7 +200,6 @@ func (q *KafkaSender) toChannel(msg *PushMsg) {
 
 //KafkaReceiver kafka接收者
 type KafkaReceiver struct {
-	isSync      bool
 	brokerAddrs []string
 	sync.RWMutex
 
@@ -203,9 +207,8 @@ type KafkaReceiver struct {
 	recvChannel chan []byte
 }
 
-func NewKafkaReceiver(brokerAddrs []string, isSync bool) IQueueReceiver {
+func NewKafkaReceiver(brokerAddrs []string) IQueueReceiver {
 	return &KafkaReceiver{
-		isSync:      isSync,
 		brokerAddrs: brokerAddrs,
 		recvChannel: make(chan []byte),
 		stopChan:    make(chan struct{}, 1),
@@ -213,21 +216,28 @@ func NewKafkaReceiver(brokerAddrs []string, isSync bool) IQueueReceiver {
 }
 
 func (q *KafkaReceiver) Init() error {
-	go q.recvRun()
+	q.recvRun()
 	return nil
 }
 
-func (q *KafkaReceiver) Recv() ([]byte, error) {
+func (q *KafkaReceiver) Recv(f func([]byte)) error {
+	defer func() {
+		close(q.recvChannel)
+		close(q.stopChan)
+	}()
+
 	for {
 		select {
 		case msg, ok := <-q.recvChannel:
 			if !ok {
 				log.Fatal("gpusher: channel is closed")
-				return nil, ErrChannelIsClosed
+				return ErrChannelIsClosed
 			}
-			return msg, nil
+
+			f(msg)
+
 		case <-q.stopChan:
-			return nil, nil
+			return nil
 		}
 	}
 }
@@ -245,27 +255,32 @@ func (q *KafkaReceiver) Stop() {
 
 func (q *KafkaReceiver) recvRun() {
 	config := sarama.NewConfig()
-	config.Producer.RequiredAcks = sarama.WaitForLocal
-	config.Producer.Retry.Max = 3
-	config.Producer.Partitioner = sarama.NewRandomPartitioner
-	config.Producer.Return.Successes = true
-	config.Producer.Flush.Frequency = 100 * time.Millisecond
+	config.Consumer.Offsets.AutoCommit.Enable = true
+	config.Version = sarama.V2_4_0_0
 
 	consumerT, err := sarama.NewConsumer(q.brokerAddrs, config)
 	if err != nil {
+		log.Fatal("gpusher: new kafka consumer err: ", err.Error())
 		return
 	}
 
 	topics, err := consumerT.Topics()
 	if err != nil {
+		log.Fatal("gpusher: kafka Topics err: ", err.Error())
 		return
 	}
 
 	topicP := make(map[string]int)
 	for _, topic := range topics {
+
+		//推送主题必须是 app_AppName的格式
+		if !strings.HasPrefix(topic, "app_") {
+			continue
+		}
+
 		ps, err := consumerT.Partitions(topic)
 		if err != nil {
-			return
+			continue
 		}
 		topicP[topic] = len(ps)
 	}
@@ -285,7 +300,7 @@ func (q *KafkaReceiver) recvRun() {
 		}
 
 		for _, p := range partitions {
-			pc, e := consumer.ConsumePartition(topic, p, sarama.OffsetOldest)
+			pc, e := consumer.ConsumePartition(topic, p, sarama.OffsetNewest)
 			if e != nil {
 				log.Printf("Start consumer for partition failed %d: %s\n", p, topic)
 				return

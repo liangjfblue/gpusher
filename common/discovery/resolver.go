@@ -12,7 +12,7 @@ import (
 	"log"
 	"sync"
 
-	"go.etcd.io/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3"
 	"google.golang.org/grpc/resolver"
 )
 

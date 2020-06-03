@@ -14,6 +14,6 @@ type IQueueSender interface {
 
 type IQueueReceiver interface {
 	Init() error
-	Recv() ([]byte, error)
+	Recv(func([]byte)) error
 	Stop()
 }
