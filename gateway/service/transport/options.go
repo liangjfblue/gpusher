@@ -12,10 +12,12 @@ import (
 
 var (
 	defaultOptions = Options{
-		Address: "8888",
-		Network: "tcp",
-		Timeout: 5 * time.Second,
-		RpcPort: ":9991",
+		Address:       "8888",
+		Network:       "tcp",
+		Timeout:       5 * time.Second,
+		RpcPort:       9990,
+		DiscoveryAddr: []string{"172.16.7.16:9002", "172.16.7.16:9004", "172.16.7.16:9006"},
+		SrvName:       "none",
 	}
 )
 
@@ -24,7 +26,9 @@ type Options struct {
 	Network         string
 	KeepAlivePeriod time.Duration
 	Timeout         time.Duration
-	RpcPort         string
+	RpcPort         int
+	DiscoveryAddr   []string
+	SrvName         string
 }
 
 func Addr(address string) Option {
@@ -51,8 +55,20 @@ func Timeout(timeout time.Duration) Option {
 	}
 }
 
-func RpcPort(rpcPort string) Option {
+func RpcPort(rpcPort int) Option {
 	return func(o *Options) {
 		o.RpcPort = rpcPort
+	}
+}
+
+func DiscoveryAddr(DiscoveryAddr []string) Option {
+	return func(o *Options) {
+		o.DiscoveryAddr = DiscoveryAddr
+	}
+}
+
+func SrvName(SrvName string) Option {
+	return func(o *Options) {
+		o.SrvName = SrvName
 	}
 }

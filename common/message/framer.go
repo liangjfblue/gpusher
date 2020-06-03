@@ -11,14 +11,13 @@ import (
 	"io"
 	"net"
 
-	"github.com/liangjfblue/gpusher/common/logger/log"
-
 	"github.com/liangjfblue/gpusher/common/codec"
 )
 
 var (
 	ErrMagicIsError     = errors.New("header magic is error")
 	ErrMaxPayloadLength = errors.New("payload is too max")
+	ErrReadLessThenNeed = errors.New("read less then need length")
 )
 
 const (
@@ -28,7 +27,6 @@ const (
 
 type IFramer interface {
 	ReadFramer() ([]byte, error)
-	Write([]byte) (int, error)
 }
 
 type framer struct {
@@ -48,11 +46,12 @@ func (f *framer) ReadFramer() ([]byte, error) {
 	)
 
 	framerHead := make([]byte, codec.FrameHeadLen)
-	if n, err = io.ReadFull(f.rawConn, framerHead); err != nil && n != codec.FrameHeadLen {
+	if n, err = io.ReadFull(f.rawConn, framerHead); err != nil {
 		return nil, err
+	} else if n != codec.FrameHeadLen {
+		return nil, ErrReadLessThenNeed
 	}
 
-	log.Debug(string(framerHead))
 	if !codec.CheckMagic(framerHead) {
 		return nil, ErrMagicIsError
 	}
@@ -63,15 +62,13 @@ func (f *framer) ReadFramer() ([]byte, error) {
 		return nil, ErrMaxPayloadLength
 	}
 
-	payload := make([]byte, 0, dl)
-	if n, err = io.ReadFull(f.rawConn, payload); err != nil && n != codec.FrameHeadLen {
+	payload := make([]byte, dl)
+	if n, err = io.ReadFull(f.rawConn, payload); err != nil {
 		return nil, err
+	} else if uint32(n) != dl {
+		return nil, ErrReadLessThenNeed
 	}
 
 	dataPack := append(framerHead, payload...)
 	return dataPack, nil
-}
-
-func (f *framer) Write(d []byte) (int, error) {
-	return f.rawConn.Write(d)
 }

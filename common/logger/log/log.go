@@ -11,34 +11,34 @@ import (
 	"github.com/liangjfblue/gpusher/common/logger/factory"
 )
 
-var _defaultLog logger.ILogger
-
-func init() {
-	_defaultLog = new(factory.VLogFactor).CreateLog(
+var (
+	_logMap    map[string]logger.ILogger
+	DefaultLog = new(factory.VLogFactor).CreateLog(
 		logger.Name("gpusher.log"),
 		logger.Level(6),
 	)
-	_defaultLog.Init()
+)
+
+const (
+	LoggerType = "default"
+)
+
+func init() {
+	RegisterLogger(LoggerType, DefaultLog)
 }
 
 //RegisterLogger 暴露函数覆盖默认logger
-func RegisterLogger(log logger.ILogger) {
-	_defaultLog = log
-	_defaultLog.Init()
+func RegisterLogger(name string, log logger.ILogger) {
+	if _logMap == nil {
+		_logMap = make(map[string]logger.ILogger)
+	}
+	_logMap[name] = log
+	log.Init()
 }
 
-func Trace(format string, args ...interface{}) {
-	_defaultLog.Trace(format, args...)
-}
-func Debug(format string, args ...interface{}) {
-	_defaultLog.Debug(format, args...)
-}
-func Info(format string, args ...interface{}) {
-	_defaultLog.Info(format, args...)
-}
-func Warn(format string, args ...interface{}) {
-	_defaultLog.Warn(format, args...)
-}
-func Error(format string, args ...interface{}) {
-	_defaultLog.Error(format, args...)
+func GetLogger(name string) logger.ILogger {
+	if l, ok := _logMap[name]; ok {
+		return l
+	}
+	return DefaultLog
 }
