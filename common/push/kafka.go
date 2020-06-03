@@ -309,7 +309,8 @@ func (q *KafkaReceiver) recvRun() {
 				for msg := range pc.Messages() {
 					q.recvChannel <- msg.Value
 				}
-				q.stopChan <- struct{}{}
+
+				q.Stop()
 			}(pc)
 		}
 	}

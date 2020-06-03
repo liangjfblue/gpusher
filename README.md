@@ -50,8 +50,11 @@ g### ateway(网关)
 ### 消息推送流程
     web-->kafka-->logic         -->gateway-->client
                        ->message
-                        
-
+     
+     
+### watch etcd service list
+                 
+    etcdctl --endpoints "http://172.16.7.16:9002,http://172.16.7.16:9004,http://172.16.7.16:9006" watch /etcd/gpusher --prefix
 
 
 
