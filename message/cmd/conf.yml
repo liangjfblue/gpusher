@@ -6,3 +6,6 @@ server:
 log:
   name: "message-log"
   level: 5
+
+redis:
+  host: "172.16.7.16:8001,172.16.7.16:8002,172.16.7.16:8003"

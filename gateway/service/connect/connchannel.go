@@ -8,8 +8,16 @@ package connect
 
 import (
 	"container/list"
+	"context"
 	"errors"
+	"fmt"
 	"sync"
+
+	"github.com/liangjfblue/gpusher/gateway/config"
+
+	"github.com/liangjfblue/gpusher/common/utils"
+	"github.com/liangjfblue/gpusher/gateway/api"
+	pb "github.com/liangjfblue/gpusher/message/proto/rpc/v1"
 
 	"github.com/liangjfblue/gpusher/common/codec"
 	"github.com/liangjfblue/gpusher/common/logger/log"
@@ -90,8 +98,15 @@ func (u *ConnChannel) AddConn(appId int, uuid string, conn *Connection) (*list.E
 
 	conn.HandleWriteMsg2Connect(appId, uuid)
 
-	//TODO redis保存当前网关连接数
-	//appId uuid key	gatewayAddr
+	//redis保存当前网关连接数
+	ip, _ := utils.ExternalIP()
+	host := fmt.Sprintf("%s:%d", ip, config.GetConfig().Server.RpcPort)
+	if _, err := api.GetMessageRpcClient().SaveGatewayUUID(context.TODO(), &pb.SaveGatewayUUIDRequest{
+		UUID:        uuid,
+		GatewayAddr: host,
+	}); err != nil {
+		return nil, err
+	}
 
 	//client conn 加入订阅key的链表
 	e := u.cl.PushFront(conn)

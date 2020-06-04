@@ -16,6 +16,7 @@ import (
 type Config struct {
 	Server
 	Log
+	Redis
 }
 
 type Server struct {
@@ -27,6 +28,10 @@ type Server struct {
 type Log struct {
 	Name  string
 	Level int
+}
+
+type Redis struct {
+	Host string
 }
 
 var (
