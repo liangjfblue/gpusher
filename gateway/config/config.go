@@ -38,11 +38,11 @@ type Channel struct {
 }
 
 var (
+	c      Config
 	onceDo sync.Once
 )
 
 func Init(filePath string) *Config {
-	c := Config{}
 	onceDo.Do(func() {
 		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
@@ -53,5 +53,9 @@ func Init(filePath string) *Config {
 			panic(err)
 		}
 	})
+	return &c
+}
+
+func GetConfig() *Config {
 	return &c
 }

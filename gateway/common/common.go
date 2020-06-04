@@ -7,6 +7,10 @@
 package common
 
 const (
+	MessageServiceName = "gpusher.message"
+)
+
+const (
 	TcpProtocol = "tcp"
 	WsProtocol  = "ws"
 )
