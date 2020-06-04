@@ -1,0 +1,8 @@
+server:
+  network: "tcp"
+  rpcport: 7780
+  discoveryaddr: "172.16.7.16:9002,172.16.7.16:9004,172.16.7.16:9006"
+
+log:
+  name: "message-log"
+  level: 5

@@ -1,0 +1,77 @@
+/**
+ *
+ * @author liangjf
+ * @create on 2020/6/4
+ * @version 1.0
+ */
+syntax = "proto3";
+
+package gpusher.srv.message;
+
+message SaveGatewayUUIDRequest {
+    string UUID = 1;
+    string GatewayAddr = 2;
+}
+
+message SaveAppUUIDRequest {
+    string UUID = 1;
+    string AppTag = 2;
+}
+
+message SaveExpireMsgRequest {
+    string UUID = 1;
+    string MsgId = 2;
+    string Msg = 3;
+    int32 ExpireTime = 4;
+}
+
+message DeleteGatewayUUIDRequest {
+    string UUID = 1;
+}
+
+message DeleteAppUUIDRequest {
+    string UUID = 1;
+    string AppTag = 2;
+}
+
+message DeleteExpireMsgRequest {
+    string UUID = 1;
+    string MsgId = 2;
+}
+
+
+message Respond {
+    int32 Code = 1;
+    string Msg = 2;
+}
+
+message GetGatewayUUIDRequest {
+    string UUID = 1;
+}
+
+message GetAppUUIDRequest {
+    string AppTag = 1;
+}
+
+message GetGatewayUUIDRespond {
+    int32 Code = 1;
+    string Msg = 2;
+    string GatewayAddr = 3;
+}
+
+message  GetAppUUIDRespond {
+    int32 Code = 1;
+    string Msg = 2;
+    repeated string UUIDs = 3;
+}
+
+service Message {
+    rpc SaveGatewayUUID(SaveGatewayUUIDRequest) returns (Respond) {}
+    rpc SaveAppUUID(SaveAppUUIDRequest) returns (Respond) {}
+    rpc SaveExpireMsg(SaveExpireMsgRequest) returns (Respond) {}
+    rpc DeleteGatewayUUID(DeleteGatewayUUIDRequest) returns (Respond) {}
+    rpc DeleteAppUUID(DeleteAppUUIDRequest) returns (Respond) {}
+    rpc DeleteExpireMsg(DeleteExpireMsgRequest) returns (Respond) {}
+    rpc GetGatewayUUID(GetGatewayUUIDRequest) returns (GetGatewayUUIDRespond) {}
+    rpc GetAppUUID(GetAppUUIDRequest) returns (GetAppUUIDRespond) {}
+}

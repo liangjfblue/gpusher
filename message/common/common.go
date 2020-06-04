@@ -7,14 +7,9 @@
 package common
 
 const (
-	LogicLog = "logic"
+	MessageLog = "message"
 )
 
 const (
-	GatewayServiceName = "gpusher.gateway"
 	MessageServiceName = "gpusher.message"
-)
-
-const (
-	GatewayPrefix = "/etcd/" + GatewayServiceName + "/"
 )
