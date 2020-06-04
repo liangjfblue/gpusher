@@ -1,0 +1,9 @@
+server:
+  port: 7030
+
+log:
+  name: "web-log"
+  level: 5
+
+kafka:
+  brokeraddrs: "172.16.7.16:8092,172.16.7.16:8093,172.16.7.16:8094"

@@ -1,9 +1,3 @@
-/**
- *
- * @author liangjf
- * @create on 2020/5/20
- * @version 1.0
- */
 package config
 
 import (
@@ -16,16 +10,11 @@ import (
 type Config struct {
 	Server
 	Log
-	Channel
+	Kafka
 }
 
 type Server struct {
-	Port          int
-	Name          string
-	Network       string
-	Proto         string
-	RpcPort       int
-	DiscoveryAddr string
+	Port int
 }
 
 type Log struct {
@@ -33,8 +22,8 @@ type Log struct {
 	Level int
 }
 
-type Channel struct {
-	BucketNum int
+type Kafka struct {
+	BrokerAddrs string
 }
 
 var (

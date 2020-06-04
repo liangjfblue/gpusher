@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package gpusher.srv.gateway;
+
+message NewRequest {
+    int32 AppId = 1;
+    string UUid = 2;
+    int32 Key = 3;
+}
+
+message CloseRequest {
+    int32 AppId = 1;
+    string UUid = 2;
+}
+
+message PushOneRequest {
+    int32 AppId = 1;
+    string UUid = 2;
+    string MsgId = 3;
+    string Timestamp = 4;
+    string Content = 5;
+}
+
+message PushAppRequest {
+    int32 AppId = 1;
+    string MsgId = 2;
+    string Timestamp = 3;
+    string Content = 4;
+}
+
+message PushAllRequest {
+    string MsgId = 1;
+    string Timestamp = 2;
+    string Content = 3;
+}
+
+message Respond {
+    int32 Code = 1;
+    string Msg = 2;
+}
+
+service Gateway {
+    rpc New(NewRequest) returns (Respond) {}
+    rpc Close(CloseRequest) returns (Respond) {}
+    rpc PushOne(PushOneRequest) returns (Respond) {}
+    rpc PushApp(PushAppRequest) returns (Respond) {}
+    rpc PushAll(PushAllRequest) returns (Respond) {}
+}

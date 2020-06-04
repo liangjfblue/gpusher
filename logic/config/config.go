@@ -16,14 +16,11 @@ import (
 type Config struct {
 	Server
 	Log
-	Channel
+	Kafka
 }
 
 type Server struct {
-	Port          int
-	Name          string
 	Network       string
-	Proto         string
 	RpcPort       int
 	DiscoveryAddr string
 }
@@ -33,8 +30,8 @@ type Log struct {
 	Level int
 }
 
-type Channel struct {
-	BucketNum int
+type Kafka struct {
+	BrokerAddrs string
 }
 
 var (

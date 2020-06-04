@@ -1,14 +1,11 @@
 server:
-  port: 8881
-  name: "gateway"
   network: "tcp"
-  proto: "tcp"
-  rpcport: 7771
+  rpcport: 7772
   discoveryaddr: "172.16.7.16:9002,172.16.7.16:9004,172.16.7.16:9006"
 
 log:
-  name: "gateway-vlog"
+  name: "logic-vlog"
   level: 5
 
-channel:
-  bucketnum: 16
+kafka:
+  brokeraddrs: "172.16.7.16:8092,172.16.7.16:8093,172.16.7.16:8094"

@@ -81,9 +81,9 @@ func NewDefaultCodec() ICodec {
 }
 
 func (c *defaultCodec) Encode(header *FrameHeader, d []byte) ([]byte, error) {
-	if d == nil {
-		return nil, ErrDataEmpty
-	}
+	//if d == nil {
+	//	return nil, ErrDataEmpty
+	//}
 
 	var (
 		err error
@@ -100,7 +100,6 @@ func (c *defaultCodec) Encode(header *FrameHeader, d []byte) ([]byte, error) {
 		ReqType:      0x0,
 		CompressType: 0x0,
 		Length:       uint32(len(d)),
-		Reserved:     0,
 	}
 
 	if header.MsgType != 0 {
@@ -139,6 +138,10 @@ func (c *defaultCodec) Encode(header *FrameHeader, d []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	if err := binary.Write(buf, binary.BigEndian, framerHeader.StreamID); err != nil {
+		return nil, err
+	}
+
 	if err = binary.Write(buf, binary.BigEndian, framerHeader.Length); err != nil {
 		return nil, err
 	}
@@ -147,8 +150,10 @@ func (c *defaultCodec) Encode(header *FrameHeader, d []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	if err = binary.Write(buf, binary.BigEndian, d); err != nil {
-		return nil, err
+	if d != nil {
+		if err = binary.Write(buf, binary.BigEndian, d); err != nil {
+			return nil, err
+		}
 	}
 
 	return buf.Bytes(), nil
@@ -167,7 +172,7 @@ func GetDataLen(framer []byte) uint32 {
 }
 
 func IsHeartBeatMsg(framer []byte) bool {
-	return true //framer[2] == HeartbeatMsg
+	return framer[2] == HeartbeatMsg
 }
 
 func GetVersion(framer []byte) uint32 {
