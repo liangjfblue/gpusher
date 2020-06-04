@@ -13,8 +13,12 @@ const (
 	RedisKeyLogicList   = "gpusher_logic_list"   //逻辑服列表	key:gpusher_logic_list		value:logicAddr
 
 	//网关
-	RedisKeyGatewayAllUUID = "gpusher_gateway_%s_all_uuid"    //hash	key:gpusher_gateway_%s_all_uuid	field:uuid	value:gatewayAddr
-	RedisKeyGatewayAppUUID = "gpusher_gateway_%s_app_%s_uuid" //hash	key:gpusher_gateway_%s_app_%s_uuid	field:uuid	value:gatewayAddr
+	RedisKeyGatewayAllUUID = "gpusher_gateway_all_uuid" //set	key:gpusher_gateway_all_uuid	field:uuid	value:gatewayAddr
+	RedisKeyGatewayAppUUID = "gpusher_gateway_app_uuid" //hash	key:gpusher_gateway_app_uuid	field:uuid	value:gatewayAddr
 
-	RedisKeyGatewayUUIDNum = "gpusher_gateway_%s_uuid_num" //string	key:gpusher_gateway_%s_uuid_num		value:
+	RedisKeyGatewayAllUUIDNum = "gpusher_gateway_all_uuid_num" //string	key:gpusher_gateway_all_uuid_num	value:
+	RedisKeyGatewayUUIDNum    = "gpusher_gateway_%s_uuid_num"  //string	key:gpusher_gateway_%s_uuid_num		value:
+
+	//离线消息
+	RedisKeyExpireMsg = "gpusher_expire_msg_uuid_"
 )
