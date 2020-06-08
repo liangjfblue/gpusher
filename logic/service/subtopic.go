@@ -27,9 +27,11 @@ var (
 func InitKafkaConsumer(ctx context.Context, brokerAddr []string) error {
 	//消息队列
 	_receiver = push.NewKafkaReceiver(brokerAddr)
-	if err := _receiver.Init(); err != nil {
-		return err
-	}
+	go func() {
+		if err := _receiver.Init(); err != nil {
+			return
+		}
+	}()
 
 	go func() {
 		if err := _receiver.Recv(dealMsg); err != nil {
@@ -86,6 +88,8 @@ func dealMsg(msg []byte) {
 func pushOne(rpcClient pb.GatewayClient, m *push.PushMsg) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*5)
 	defer cancel()
+
+	log.GetLogger(common.LogicLog).Error("gpusher: logic pushOne: %s", *m)
 
 	if _, err := rpcClient.PushOne(ctx, &pb.PushOneRequest{
 		AppId:     push.AppM[m.Tag],

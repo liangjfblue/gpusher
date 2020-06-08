@@ -62,9 +62,11 @@ func (s *Server) Init() error {
 	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*2)
 	defer cancel()
 	kafkaAddr := strings.Split(s.config.Kafka.BrokerAddrs, ",")
-	if err := service.InitKafkaConsumer(ctx, kafkaAddr); err != nil {
-		return err
-	}
+	go func() {
+		if err := service.InitKafkaConsumer(ctx, kafkaAddr); err != nil {
+			return
+		}
+	}()
 
 	return nil
 }
