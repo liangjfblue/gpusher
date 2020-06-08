@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Shopify/sarama v1.26.4
+	github.com/alecthomas/log4go v0.0.0-20180109082532-d146e6b86faa
 	github.com/chasex/redis-go-cluster v1.0.0
 	github.com/coreos/bbolt v0.0.0-00010101000000-000000000000 // indirect
 	github.com/coreos/etcd v3.3.22+incompatible
