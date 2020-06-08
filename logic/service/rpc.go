@@ -42,7 +42,8 @@ func InitGatewayRpcClient(etcdAddr []string) error {
 	}
 
 	if len(gatewayHots) <= 0 {
-		return errors.New("can not found gateway node")
+		//不需要退出
+		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*20)
@@ -75,9 +76,6 @@ func GetGatewayRpcClient(host string) (pb.GatewayClient, error) {
 }
 
 func addGatewayNode(ctx context.Context, host string) error {
-	mu.Lock()
-	defer mu.Unlock()
-
 	cc, err := grpc.DialContext(ctx, host, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err

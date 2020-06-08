@@ -15,7 +15,7 @@ var (
 	ServiceName = "gpusher.gateway"
 )
 
-//go:generate protoc -I ../proto/rpc/v1 --go_out=plugins=grpc:../proto/rpc/v1 ../proto/rpc/v1/api.proto
+//go:generate protoc -I ../proto/rpc/v1 --go_out=plugins=grpc:../proto/rpc/v1 ../proto/rpc/v1/gateway.proto
 
 func main() {
 	c := config.Init("./conf.yml")

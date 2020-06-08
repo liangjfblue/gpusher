@@ -10,6 +10,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/liangjfblue/gpusher/common/logger/log"
+	"github.com/liangjfblue/gpusher/message/common"
+
 	"github.com/liangjfblue/gpusher/message/models"
 
 	pb "github.com/liangjfblue/gpusher/message/proto/rpc/v1"
@@ -174,6 +177,7 @@ func (m *MessageRpc) GetGatewayUUID(ctx context.Context, in *pb.GetGatewayUUIDRe
 	var gatewayAddr string
 	gatewayAddr, err = m.models.GetGatewayUUID(in.UUID)
 	if err != nil {
+		log.GetLogger(common.MessageLog).Error("gpusher: get uuid gateway err:%s", err.Error())
 		return
 	}
 

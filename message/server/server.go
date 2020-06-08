@@ -17,9 +17,9 @@ import (
 	"github.com/liangjfblue/gpusher/logic/api"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
-	"github.com/liangjfblue/gpusher/common/transport"
 	"github.com/liangjfblue/gpusher/message/common"
 	"github.com/liangjfblue/gpusher/message/config"
+	"github.com/liangjfblue/gpusher/message/transport"
 )
 
 type Server struct {
@@ -44,12 +44,7 @@ func (s *Server) Init() error {
 	s.ctx, s.cancelFunc = context.WithCancel(context.TODO())
 
 	etcdAddr := strings.Split(s.config.Server.DiscoveryAddr, ",")
-
-	//初始化rpc客户端
-	if err := api.InitMessageClientRpc(s.ctx, etcdAddr, common.MessageServiceName); err != nil {
-		return err
-	}
-
+	redisAddr := strings.Split(s.config.Redis.Host, ",")
 	//注册grpc服务, 暴露推送rpc接口
 	s.rpcTransport = transport.NewFactoryRPCTransport(
 		transport.Addr(fmt.Sprintf(":%d", s.config.Server.RpcPort)),
@@ -57,6 +52,7 @@ func (s *Server) Init() error {
 		transport.RpcPort(s.config.Server.RpcPort),
 		transport.DiscoveryAddr(etcdAddr),
 		transport.SrvName(s.serviceName),
+		transport.RedisHost(redisAddr),
 	)
 
 	return nil

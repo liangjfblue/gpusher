@@ -9,7 +9,6 @@ package push
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -124,9 +123,6 @@ func (q *KafkaSender) sendSync() {
 				continue
 			}
 
-			fmt.Println("------------------")
-			fmt.Println(string(data))
-			fmt.Println("------------------")
 			kafkaMsg := sarama.ProducerMessage{
 				Topic: msg.Tag,
 				Value: sarama.StringEncoder(data),
@@ -249,7 +245,6 @@ func (q *KafkaReceiver) Stop() {
 	if len(q.stopChan) > 0 {
 		return
 	}
-
 	q.stopChan <- struct{}{}
 }
 

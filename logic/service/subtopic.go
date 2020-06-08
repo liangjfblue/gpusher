@@ -51,9 +51,9 @@ func dealMsg(msg []byte) {
 		return
 	}
 
-	host, err := router(&m)
+	host, err := router(context.TODO(), &m)
 	if err != nil {
-		log.GetLogger(common.LogicLog).Error("uuid no gateway node")
+		log.GetLogger(common.LogicLog).Error("uuid no gateway node, err:%s", err.Error())
 		return
 	}
 

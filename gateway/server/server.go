@@ -15,11 +15,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/liangjfblue/gpusher/gateway/api"
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
-	"github.com/liangjfblue/gpusher/common/transport"
 	"github.com/liangjfblue/gpusher/gateway/common"
+	"github.com/liangjfblue/gpusher/gateway/transport"
 
 	"github.com/liangjfblue/gpusher/gateway/config"
 )
@@ -52,12 +53,18 @@ func (s *Server) Init() error {
 	//初始化客户端本地缓存
 	connect.InitClientChannel(s.config)
 
+	etcdAddr := strings.Split(s.config.Server.DiscoveryAddr, ",")
+
+	//初始化message rpc客户端
+	if err := api.InitMessageClientRpc(context.TODO(), etcdAddr, common.MessageServiceName); err != nil {
+		return err
+	}
+
 	//初始化定时调度线程
 
 	//初始化负载监控线程
 
 	//注册grpc服务, 暴露推送rpc接口
-	etcdAddr := strings.Split(s.config.Server.DiscoveryAddr, ",")
 	s.rpcTransport = transport.NewFactoryRPCTransport(
 		transport.Addr(fmt.Sprintf(":%d", s.config.Server.RpcPort)),
 		transport.Network(s.config.Server.Network),
@@ -105,4 +112,5 @@ func (s *Server) Run() {
 func (s *Server) Stop() {
 	log.GetLogger(common.GatewayLog).Debug("gateway Stop clean")
 	connect.GetClientChannel().Close()
+	api.CloseRpcClient()
 }
