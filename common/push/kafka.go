@@ -7,6 +7,7 @@
 package push
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -265,48 +266,66 @@ func (q *KafkaReceiver) recvRun() {
 		return
 	}
 
-	topicP := make(map[string]int)
+	topicP := make([]string, 0)
 	for _, topic := range topics {
-
 		//推送主题必须是 app_AppName的格式
 		if !strings.HasPrefix(topic, "app_") {
 			continue
 		}
 
-		ps, err := consumerT.Partitions(topic)
-		if err != nil {
+		if _, err := consumerT.Partitions(topic); err != nil {
 			continue
 		}
-		topicP[topic] = len(ps)
+		topicP = append(topicP, topic)
 	}
 	consumerT.Close()
 
-	for topic := range topicP {
-		consumer, err := sarama.NewConsumer(q.brokerAddrs, config)
-		if err != nil {
-			log.Printf("gpusher: Create consumer for %s topic failed: %s\n", topic, err.Error())
-			return
-		}
-
-		partitions, err := consumer.Partitions(topic)
-		if err != nil {
-			log.Printf("Get %s topic's paritions failed: %s\n", topic, err.Error())
-
-		}
-
-		for _, p := range partitions {
-			pc, e := consumer.ConsumePartition(topic, p, sarama.OffsetNewest)
-			if e != nil {
-				log.Printf("Start consumer for partition failed %d: %s\n", p, topic)
-				return
-			}
-			go func(pc sarama.PartitionConsumer) {
-				for msg := range pc.Messages() {
-					q.recvChannel <- msg.Value
-				}
-
-				q.Stop()
-			}(pc)
-		}
+	consumerG, err := sarama.NewConsumerGroup(q.brokerAddrs, "gpusher", config)
+	if err != nil {
+		log.Fatal("gpusher: NewConsumerGroup err: ", err.Error())
+		return
 	}
+	defer consumerG.Close()
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	consumer := Consumer{recvChannel: q.recvChannel}
+	for {
+		select {
+		case <-q.stopChan:
+			return
+		default:
+			if err := consumerG.Consume(ctx, topicP, &consumer); err != nil {
+				time.Sleep(time.Second * 3)
+			}
+		}
+
+	}
+}
+
+type Consumer struct {
+	recvChannel chan []byte
+	stopChan    chan struct{}
+}
+
+func (consumer *Consumer) Setup(s sarama.ConsumerGroupSession) error {
+	return nil
+}
+
+func (consumer *Consumer) Cleanup(s sarama.ConsumerGroupSession) error {
+	return nil
+}
+
+func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	defer func() {
+		consumer.stopChan <- struct{}{}
+	}()
+
+	for message := range claim.Messages() {
+		consumer.recvChannel <- message.Value
+		session.MarkMessage(message, "")
+	}
+
+	return nil
 }
