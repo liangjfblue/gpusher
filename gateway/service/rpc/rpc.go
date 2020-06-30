@@ -13,8 +13,8 @@ import (
 	"github.com/liangjfblue/gpusher/common/defind"
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/gateway/common"
-	pb "github.com/liangjfblue/gpusher/gateway/proto/rpc/v1"
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
+	pb "github.com/liangjfblue/gpusher/proto/gateway/rpc/v1"
 )
 
 type GatewayRPC struct {

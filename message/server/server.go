@@ -14,8 +14,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/liangjfblue/gpusher/logic/api"
-
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/message/common"
 	"github.com/liangjfblue/gpusher/message/config"
@@ -76,6 +74,5 @@ func (s *Server) Run() {
 func (s *Server) Stop() {
 	log.GetLogger(common.MessageLog).Debug("message Stop clean")
 
-	api.CloseRpcClient()
 	s.cancelFunc()
 }

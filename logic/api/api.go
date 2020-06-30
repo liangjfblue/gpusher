@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/liangjfblue/gpusher/message/proto/rpc/v1"
+	pb "github.com/liangjfblue/gpusher/proto/message/rpc/v1"
 
 	"github.com/liangjfblue/gpusher/common/discovery"
 	"google.golang.org/grpc"

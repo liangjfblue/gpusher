@@ -1,0 +1,17 @@
+language:
+  - go
+
+sudo: true
+
+go:
+  - "1.13.x"
+
+env:
+  - GO111MODULE=on
+
+before_install:
+  - chmod +x ./scripts/build-docker.sh
+  - chmod +x ./scripts/start-all-components.sh
+
+#script:
+  #- ./scripts/build.sh all

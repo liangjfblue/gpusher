@@ -9,7 +9,7 @@ package controllers
 import (
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/common/push"
-	"github.com/liangjfblue/gpusher/gateway/common"
+	"github.com/liangjfblue/gpusher/web/common"
 
 	"github.com/gin-gonic/gin"
 	"github.com/liangjfblue/gpusher/web/service"

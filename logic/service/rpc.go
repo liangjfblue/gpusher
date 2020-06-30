@@ -16,7 +16,7 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 
-	pb "github.com/liangjfblue/gpusher/gateway/proto/rpc/v1"
+	pb "github.com/liangjfblue/gpusher/proto/gateway/rpc/v1"
 	"google.golang.org/grpc"
 )
 

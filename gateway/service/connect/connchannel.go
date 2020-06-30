@@ -17,7 +17,7 @@ import (
 
 	"github.com/liangjfblue/gpusher/common/utils"
 	"github.com/liangjfblue/gpusher/gateway/api"
-	pb "github.com/liangjfblue/gpusher/message/proto/rpc/v1"
+	pb "github.com/liangjfblue/gpusher/proto/message/rpc/v1"
 
 	"github.com/liangjfblue/gpusher/common/codec"
 	"github.com/liangjfblue/gpusher/common/logger/log"
