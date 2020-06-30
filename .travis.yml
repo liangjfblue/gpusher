@@ -10,8 +10,8 @@ env:
   - GO111MODULE=on
 
 before_install:
-  - chmod +x ./scripts/build-docker.sh
-  - chmod +x ./scripts/start-all-components.sh
+  - chmod +x ./script/build-docker.sh
+  - chmod +x ./script/start-all-components.sh
 
 #script:
   #- ./scripts/build.sh all
