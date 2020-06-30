@@ -15,7 +15,7 @@ import (
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/logic/common"
 
-	pb "github.com/liangjfblue/gpusher/gateway/proto/rpc/v1"
+	pb "github.com/liangjfblue/gpusher/proto/gateway/rpc/v1"
 
 	"github.com/liangjfblue/gpusher/common/push"
 )

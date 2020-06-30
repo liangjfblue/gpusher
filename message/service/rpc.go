@@ -15,7 +15,7 @@ import (
 
 	"github.com/liangjfblue/gpusher/message/models"
 
-	pb "github.com/liangjfblue/gpusher/message/proto/rpc/v1"
+	pb "github.com/liangjfblue/gpusher/proto/message/rpc/v1"
 )
 
 var (

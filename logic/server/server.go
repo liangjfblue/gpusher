@@ -55,7 +55,8 @@ func (s *Server) Init() error {
 	}
 
 	//初始化message rpc客户端
-	if err := api.InitMessageClientRpc(s.ctx, etcdAddr, common.MessageServiceName); err != nil {
+	if err := api.InitMessageClientRpc(ctx, etcdAddr, common.MessageServiceName); err != nil {
+		log.GetLogger(common.LogicLog).Debug("logic rpc to message err:%s", err.Error())
 		return err
 	}
 
@@ -87,4 +88,5 @@ func (s *Server) Stop() {
 	service.StopKafkaConsumer()
 	service.CLoseRpcClient()
 	s.cancelFunc()
+	api.CloseRpcClient()
 }

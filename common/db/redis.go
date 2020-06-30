@@ -13,7 +13,7 @@ import (
 )
 
 type RedisPool struct {
-	cluster redis.Cluster
+	cluster *redis.Cluster
 }
 
 func NewRedisCluster(nodes []string) (*RedisPool, error) {

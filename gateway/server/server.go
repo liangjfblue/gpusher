@@ -42,27 +42,20 @@ func NewServer(c *config.Config, serviceName string) IServer {
 }
 
 func (s *Server) Init() error {
-	//初始化etcd
-
-	//生成gatewayId, 向注册中心注册
-	//gatewayId := uuid.NewUuid()
-	//gatewayId + ip:port
-
-	//加载缓存message节点列表
-
 	//初始化客户端本地缓存
 	connect.InitClientChannel(s.config)
 
 	etcdAddr := strings.Split(s.config.Server.DiscoveryAddr, ",")
 
 	//初始化message rpc客户端
-	if err := api.InitMessageClientRpc(context.TODO(), etcdAddr, common.MessageServiceName); err != nil {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*2)
+	defer cancel()
+	if err := api.InitMessageClientRpc(ctx, etcdAddr, common.MessageServiceName); err != nil {
+		log.GetLogger(common.GatewayLog).Debug("gateway rpc to message err:%s", err.Error())
 		return err
 	}
 
-	//初始化定时调度线程
-
-	//初始化负载监控线程
+	//TODO 初始化定时调度线程	初始化负载监控线程
 
 	//注册grpc服务, 暴露推送rpc接口
 	s.rpcTransport = transport.NewFactoryRPCTransport(

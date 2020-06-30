@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/liangjfblue/gpusher/web/common"
+
 	"github.com/liangjfblue/gpusher/common/push"
 	"github.com/liangjfblue/gpusher/web/service"
 
 	"github.com/liangjfblue/gpusher/web/config"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
-	"github.com/liangjfblue/gpusher/gateway/common"
 	"github.com/liangjfblue/gpusher/web/router"
 )
 

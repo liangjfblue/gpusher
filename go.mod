@@ -39,3 +39,5 @@ require (
 )
 
 replace github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
+
+replace github.com/chasex/redis-go-cluster => github.com/chasex/redis-go-cluster v1.0.1-0.20161207023922-222d81891f1d

@@ -20,7 +20,7 @@ import (
 
 	"github.com/liangjfblue/gpusher/message/service"
 
-	pb "github.com/liangjfblue/gpusher/message/proto/rpc/v1"
+	pb "github.com/liangjfblue/gpusher/proto/message/rpc/v1"
 
 	"github.com/liangjfblue/gpusher/message/common"
 
@@ -61,6 +61,7 @@ func (t *rpcTransport) ListenServer(ctx context.Context) error {
 	go func() {
 		if err = t.serve(ctx, lis); err != nil {
 			log.GetLogger(common.MessageLog).Error("transport serve error, %v", err)
+			panic(err)
 		}
 	}()
 

@@ -4,7 +4,7 @@ import (
 	"github.com/liangjfblue/gpusher/common/logger"
 	"github.com/liangjfblue/gpusher/common/logger/factory"
 	"github.com/liangjfblue/gpusher/common/logger/log"
-	"github.com/liangjfblue/gpusher/gateway/common"
+	"github.com/liangjfblue/gpusher/web/common"
 	"github.com/liangjfblue/gpusher/web/config"
 	"github.com/liangjfblue/gpusher/web/server"
 )
