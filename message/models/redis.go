@@ -7,6 +7,8 @@
 package models
 
 import (
+	"fmt"
+
 	"github.com/chasex/redis-go-cluster"
 	"github.com/liangjfblue/gpusher/common/db"
 	"github.com/liangjfblue/gpusher/common/defind"
@@ -49,12 +51,13 @@ func (m *RedisModel) SaveExpireMsg(uuid string, msgId string, msg string, expire
 //DeleteGatewayUUID 删除网关uuid映射
 func (m *RedisModel) DeleteGatewayUUID(uuid string) error {
 	_, err := m.pool.HDel(defind.RedisKeyGatewayAllUUID, uuid)
+	fmt.Println(err)
 	return err
 }
 
 //DeleteAppUUID 删除AppTag和uuid映射
 func (m *RedisModel) DeleteAppUUID(uuid string, appTag string) error {
-	_, err := m.pool.HDel(defind.RedisKeyGatewayAppUUID, appTag, uuid)
+	_, err := m.pool.HDel(defind.RedisKeyGatewayAppUUID, appTag)
 	return err
 }
 

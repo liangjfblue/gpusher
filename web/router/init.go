@@ -31,5 +31,7 @@ func (r *Router) initRouter() {
 	g := r.G.Group("/v1")
 	{
 		g.POST("/push", controllers.PushMsg)
+
+		g.POST("/token", controllers.Token)
 	}
 }

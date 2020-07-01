@@ -11,6 +11,8 @@ type Config struct {
 	Server
 	Log
 	Kafka
+	Redis
+	Etcd
 }
 
 type Server struct {
@@ -24,6 +26,14 @@ type Log struct {
 
 type Kafka struct {
 	BrokerAddrs string
+}
+
+type Redis struct {
+	Host string
+}
+
+type Etcd struct {
+	Host string
 }
 
 var (

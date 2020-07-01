@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/liangjfblue/gpusher/web/models"
+
 	"github.com/liangjfblue/gpusher/web/common"
 
 	"github.com/liangjfblue/gpusher/common/push"
@@ -29,6 +31,17 @@ func NewServer(config *config.Config) *Server {
 }
 
 func (s *Server) Init() error {
+	//redis
+	redisAddr := strings.Split(s.config.Redis.Host, ",")
+	if err := models.InitRedisPool(redisAddr); err != nil {
+		return err
+	}
+
+	etcdAddr := strings.Split(s.config.Etcd.Host, ",")
+	if err := models.InitEtcd(etcdAddr); err != nil {
+		return err
+	}
+
 	//消息队列
 	addr := strings.Split(s.config.Kafka.BrokerAddrs, ",")
 	q := push.NewKafkaSender(addr, false)

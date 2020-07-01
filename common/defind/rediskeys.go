@@ -21,4 +21,7 @@ const (
 
 	//离线消息
 	RedisKeyExpireMsg = "gpusher_expire_msg_uuid_"
+
+	//用户token
+	RedisKeyUUIDToken = "gpusher_uuid_token_" //hash 分片
 )
