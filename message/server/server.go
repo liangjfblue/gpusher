@@ -15,10 +15,10 @@ import (
 	"syscall"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
+	"github.com/liangjfblue/gpusher/common/server"
 	"github.com/liangjfblue/gpusher/message/common"
 	"github.com/liangjfblue/gpusher/message/config"
 	"github.com/liangjfblue/gpusher/message/transport"
-	"github.com/liangjfblue/gpusher/web/server"
 )
 
 type Server struct {

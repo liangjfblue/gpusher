@@ -42,7 +42,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			if codec.IsHeartBeatMsg(d) {
+			if codec.GetMsgType(d) == codec.HeartbeatMsg {
 				fmt.Printf("read heartbeat message:%v\n", d[:codec.FrameHeadLen])
 				continue
 			}
@@ -115,8 +115,6 @@ func sendHeartbeat(conn net.Conn) {
 		MsgType:      0x01, //0x1: heartbeat
 		ReqType:      0x0,
 		CompressType: 0x0,
-		StreamID:     1,
-		Reserved:     0,
 	}, nil)
 	if err != nil {
 		log.Fatal(err)

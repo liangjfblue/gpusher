@@ -23,14 +23,16 @@ type ICodec interface {
 }
 
 const (
-	FrameHeadLen = 15
+	FrameHeadLen = 21
 	Magic        = 0x45
 	Version      = 0
 )
 
 const (
-	GeneralMsg   = 0x00
-	HeartbeatMsg = 0x01
+	GeneralMsg     = 0x00
+	HeartbeatMsg   = 0x01
+	MsgAckMsg      = 0x02
+	SyncOfflineMsg = 0x03
 )
 
 //FrameHeader 帧头
@@ -40,7 +42,7 @@ type FrameHeader struct {
 	MsgType      uint8  //1 msg type, 0x0: general req,  0x1: heartbeat
 	ReqType      uint8  //1 request type, 0x0: send and receive,   0x1: send but not receive
 	CompressType uint8  //1 compression or not,  0x0: not compression,  0x1: compression
-	StreamID     uint16 //2 stream ID
+	StreamID     uint64 //8 stream ID
 	Length       uint32 //4 total packet length
 	Reserved     uint32 //4 4 bytes reserved
 }
@@ -168,13 +170,13 @@ func CheckMagic(framer []byte) bool {
 }
 
 func GetDataLen(framer []byte) uint32 {
-	return binary.BigEndian.Uint32(framer[7:11])
+	return binary.BigEndian.Uint32(framer[13:17])
 }
 
-func IsHeartBeatMsg(framer []byte) bool {
-	return framer[2] == HeartbeatMsg
+func GetMsgType(framer []byte) byte {
+	return framer[2]
 }
 
-func GetVersion(framer []byte) uint32 {
-	return Version // binary.BigEndian.Uint32(framer[1:2])
+func GetVersion(framer []byte) byte {
+	return framer[1]
 }
