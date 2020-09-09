@@ -18,6 +18,7 @@ import (
 	"github.com/liangjfblue/gpusher/message/common"
 	"github.com/liangjfblue/gpusher/message/config"
 	"github.com/liangjfblue/gpusher/message/transport"
+	"github.com/liangjfblue/gpusher/web/server"
 )
 
 type Server struct {
@@ -30,7 +31,7 @@ type Server struct {
 	rpcTransport transport.ITransport
 }
 
-func NewServer(c *config.Config, serviceName string) IServer {
+func NewServer(c *config.Config, serviceName string) server.IServer {
 	s := new(Server)
 
 	s.config = c

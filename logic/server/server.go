@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/liangjfblue/gpusher/logic/api"
+	"github.com/liangjfblue/gpusher/web/server"
 
 	"github.com/liangjfblue/gpusher/logic/service"
 
@@ -33,7 +34,7 @@ type Server struct {
 	serviceName string
 }
 
-func NewServer(c *config.Config, serviceName string) IServer {
+func NewServer(c *config.Config, serviceName string) server.IServer {
 	s := new(Server)
 
 	s.config = c

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/liangjfblue/gpusher/common/server"
+
 	"github.com/liangjfblue/gpusher/web/common"
 
 	"github.com/liangjfblue/gpusher/common/push"
@@ -21,7 +23,7 @@ type Server struct {
 	Router *router.Router
 }
 
-func NewServer(config *config.Config) *Server {
+func NewServer(config *config.Config) server.IServer {
 	return &Server{
 		config: config,
 		Router: router.NewRouter(),
