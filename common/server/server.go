@@ -1,7 +1,7 @@
 /**
  *
  * @author liangjf
- * @create on 2020/6/2
+ * @create on 2020/9/9
  * @version 1.0
  */
 package server
@@ -9,4 +9,5 @@ package server
 type IServer interface {
 	Init() error
 	Run()
+	Stop()
 }

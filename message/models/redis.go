@@ -54,7 +54,7 @@ func (m *RedisModel) DeleteGatewayUUID(uuid string) error {
 
 //DeleteAppUUID 删除AppTag和uuid映射
 func (m *RedisModel) DeleteAppUUID(uuid string, appTag string) error {
-	_, err := m.pool.HDel(defind.RedisKeyGatewayAppUUID, appTag, uuid)
+	_, err := m.pool.HDel(defind.RedisKeyGatewayAppUUID, appTag)
 	return err
 }
 

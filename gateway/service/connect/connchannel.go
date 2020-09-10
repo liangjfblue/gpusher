@@ -8,16 +8,15 @@ package connect
 
 import (
 	"container/list"
-	"context"
 	"errors"
 	"fmt"
 	"sync"
 
+	"github.com/liangjfblue/gpusher/gateway/service/message"
+
 	"github.com/liangjfblue/gpusher/gateway/config"
 
 	"github.com/liangjfblue/gpusher/common/utils"
-	"github.com/liangjfblue/gpusher/gateway/api"
-	pb "github.com/liangjfblue/gpusher/proto/message/rpc/v1"
 
 	"github.com/liangjfblue/gpusher/common/codec"
 	"github.com/liangjfblue/gpusher/common/logger/log"
@@ -101,10 +100,7 @@ func (u *ConnChannel) AddConn(appId int, uuid string, conn *Connection) (*list.E
 	//redis保存当前网关连接数
 	ip, _ := utils.ExternalIP()
 	host := fmt.Sprintf("%s:%d", ip, config.GetConfig().Server.RpcPort)
-	if _, err := api.GetMessageRpcClient().SaveGatewayUUID(context.TODO(), &pb.SaveGatewayUUIDRequest{
-		UUID:        uuid,
-		GatewayAddr: host,
-	}); err != nil {
+	if err := message.SaveGatewayUUID(uuid, host); err != nil {
 		return nil, err
 	}
 

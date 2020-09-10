@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
+	"github.com/liangjfblue/gpusher/common/server"
 	"github.com/liangjfblue/gpusher/message/common"
 	"github.com/liangjfblue/gpusher/message/config"
 	"github.com/liangjfblue/gpusher/message/transport"
@@ -30,7 +31,7 @@ type Server struct {
 	rpcTransport transport.ITransport
 }
 
-func NewServer(c *config.Config, serviceName string) IServer {
+func NewServer(c *config.Config, serviceName string) server.IServer {
 	s := new(Server)
 
 	s.config = c

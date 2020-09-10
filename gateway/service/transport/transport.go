@@ -34,3 +34,9 @@ func wrapConn(rawConn net.Conn) *connWrapper {
 		framer:  message.NewFramer(rawConn),
 	}
 }
+
+func (c *connWrapper) setWrapConn(rawConn net.Conn) {
+	c.Conn = rawConn
+	c.CurTime = time.Now().Unix()
+	c.framer = message.NewFramer(rawConn)
+}

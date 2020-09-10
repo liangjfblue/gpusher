@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/liangjfblue/gpusher/logic/models"
+
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/logic/common"
 
@@ -53,6 +55,7 @@ func dealMsg(msg []byte) {
 		return
 	}
 
+	//msg router to user, where gateway
 	host, err := router(context.TODO(), &m)
 	if err != nil {
 		log.GetLogger(common.LogicLog).Error("uuid no gateway node, err:%s", err.Error())
@@ -69,6 +72,21 @@ func dealMsg(msg []byte) {
 		log.GetLogger(common.LogicLog).Error("no this app tag:%s", m.Tag)
 		return
 	}
+
+	//每个消息打序号
+	m.Body.MsgSeq = models.GetRedisPool().GenerateMsgSeq(m.Body.UUID)
+
+	//TODO 持久化 add to message table
+	if m.Body.OfflinePush {
+
+	}
+
+	//TODO 消息多久过期, 默认不过期
+	if m.Body.ExpireTime > 0 {
+
+	}
+
+	//TODO 推入已发送待确认队列infightqueue
 
 	switch m.Body.Type {
 	case push.Push2One:
@@ -96,7 +114,7 @@ func pushOne(rpcClient pb.GatewayClient, m *push.PushMsg) error {
 		UUid:      m.Body.UUID,
 		MsgId:     fmt.Sprint(time.Now().UnixNano()),
 		Timestamp: fmt.Sprint(time.Now().UnixNano()),
-		Content:   m.Body.Content,
+		Content:   m.Body.String(),
 	}); err != nil {
 		return err
 	}
@@ -105,11 +123,36 @@ func pushOne(rpcClient pb.GatewayClient, m *push.PushMsg) error {
 }
 
 func pushApp(rpcClient pb.GatewayClient, m *push.PushMsg) error {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*5)
+	defer cancel()
+
+	log.GetLogger(common.LogicLog).Error("gpusher: logic pushApp: %s", *m)
+
+	if _, err := rpcClient.PushApp(ctx, &pb.PushAppRequest{
+		AppId:     push.AppM[m.Tag],
+		MsgId:     fmt.Sprint(time.Now().UnixNano()),
+		Timestamp: fmt.Sprint(time.Now().UnixNano()),
+		Content:   m.Body.String(),
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func pushAll(rpcClient pb.GatewayClient, m *push.PushMsg) error {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*5)
+	defer cancel()
+
+	log.GetLogger(common.LogicLog).Error("gpusher: logic pushAll: %s", *m)
+
+	if _, err := rpcClient.PushAll(ctx, &pb.PushAllRequest{
+		MsgId:     fmt.Sprint(time.Now().UnixNano()),
+		Timestamp: fmt.Sprint(time.Now().UnixNano()),
+		Content:   m.Body.String(),
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }

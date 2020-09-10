@@ -8,7 +8,14 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
+
+	"github.com/liangjfblue/gpusher/common/logger/log"
+
+	"github.com/liangjfblue/gpusher/gateway/common"
+	"github.com/liangjfblue/gpusher/logic/api"
 
 	pb "github.com/liangjfblue/gpusher/proto/message/rpc/v1"
 
@@ -19,14 +26,13 @@ import (
 
 var (
 	_MessageRpcClient pb.MessageClient
-	_conns            []*grpc.ClientConn
+	_conns            *grpc.ClientConn
+	_etcdAddr         []string
 )
 
-func init() {
-	_conns = make([]*grpc.ClientConn, 0)
-}
-
 func InitMessageClientRpc(ctx context.Context, etcdAddr []string, serviceName string) error {
+	_etcdAddr = etcdAddr
+
 	rl := discovery.NewEtcdBuilder(etcdAddr, serviceName)
 	resolver.Register(rl)
 
@@ -41,18 +47,34 @@ func InitMessageClientRpc(ctx context.Context, etcdAddr []string, serviceName st
 	}
 
 	_MessageRpcClient = pb.NewMessageClient(conn)
-
-	_conns = append(_conns, conn)
+	_conns = conn
 
 	return nil
 }
 
+//CloseRpcClient release message rpc client
 func CloseRpcClient() {
-	for _, conn := range _conns {
-		_ = conn.Close()
-	}
+	_ = _conns.Close()
 }
 
+//GetMessageRpcClient get message rpc client
 func GetMessageRpcClient() pb.MessageClient {
 	return _MessageRpcClient
+}
+
+//ReBalanceMessageRpcClient balance message rpc client
+func ReBalanceMessageRpcClient() error {
+	log.GetLogger(common.GatewayLog).Debug("reconnect message rpc")
+
+	CloseRpcClient()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*4)
+	defer cancel()
+	for i := 0; i < 3; i++ {
+		if err := api.InitMessageClientRpc(ctx, _etcdAddr, common.MessageServiceName); err == nil {
+			log.GetLogger(common.GatewayLog).Debug("reconnect message rpc ok")
+			return nil
+		}
+	}
+	return errors.New("gateway rpc to message err")
 }
