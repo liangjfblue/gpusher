@@ -88,4 +88,9 @@ var (
 	ErrPushMsgBodyTypeEmpty      = Errno{Code: New(103), Msg: "缺失推送类型"}
 	ErrPushMsgBodyContentEmpty   = Errno{Code: New(104), Msg: "缺失推送内容"}
 	ErrPushMsgBodyExpireTimeOver = Errno{Code: New(105), Msg: "超过最大过期时间"}
+
+	ErrSignToken       = Errno{Code: New(150), Msg: "生成token失败"}
+	ErrUserNotFound    = Errno{Code: New(151), Msg: "用户不存在/密码错误"}
+	ErrSaveToken2Redis = Errno{Code: New(152), Msg: "生成token失败"}
+	ErrGatewayEmpty    = Errno{Code: New(153), Msg: "网关列表空"}
 )

@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liangjfblue/gpusher/gateway/service/message"
+
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
 
 	"github.com/liangjfblue/gpusher/gateway/proto"
@@ -191,7 +193,7 @@ func (t *tcpTransport) ioHandle(ctx context.Context, conn *connWrapper) {
 			} else {
 				log.GetLogger(common.GatewayLog).Error("for read err:%s", err.Error())
 			}
-			break
+			goto EXIT
 		}
 
 		switch codec.GetMsgType(framer) {
@@ -200,12 +202,17 @@ func (t *tcpTransport) ioHandle(ctx context.Context, conn *connWrapper) {
 			resp, err := cc.Encode(&codec.FrameHeader{MsgType: codec.HeartbeatMsg}, nil)
 			if err != nil {
 				log.GetLogger(common.GatewayLog).Error("codec Encode data err:%s", err.Error())
-				return
+				goto EXIT
 			}
 
 			if _, err := conn.Conn.Write(resp); err != nil {
 				log.GetLogger(common.GatewayLog).Error("conn write HeartbeatReply, err:%s", err.Error())
-				return
+				goto EXIT
+			}
+
+			//TODO rpc to message 续期redis的路由, 防止gateway还保留旧的路由映射
+			if err := message.ExpireGatewayUUID(connPayload.UUID); err != nil {
+				log.GetLogger(common.GatewayLog).Error("ExpireGatewayUUID err:%s", err.Error())
 			}
 		case codec.MsgAckMsg:
 			//TODO 客户端确认消费, rpc到logic确认
@@ -214,6 +221,12 @@ func (t *tcpTransport) ioHandle(ctx context.Context, conn *connWrapper) {
 		default:
 			log.GetLogger(common.GatewayLog).Error("the msg type not support")
 		}
+	}
+
+EXIT:
+	//rpc message删除路由
+	if err := message.DeleteGatewayUUID(connPayload.UUID); err != nil {
+		log.GetLogger(common.GatewayLog).Error("DeleteGatewayUUID err:%s", err.Error())
 	}
 }
 

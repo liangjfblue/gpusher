@@ -54,7 +54,7 @@ func (p *RedisPool) HIncrBy(key, field string, increment int) (int64, error) {
 	return redis.Int64(p.cluster.Do("HINCRBY", key, field, increment))
 }
 
-func (p *RedisPool) HDel(key string, fields ...string) (int, error) {
+func (p *RedisPool) HDel(key string, fields string) (int, error) {
 	return redis.Int(p.cluster.Do("HDEL", key, fields))
 }
 
