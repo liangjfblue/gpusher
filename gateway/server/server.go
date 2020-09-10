@@ -15,12 +15,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/liangjfblue/gpusher/common/server"
+
 	"github.com/liangjfblue/gpusher/gateway/api"
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
 
 	"github.com/liangjfblue/gpusher/common/logger/log"
 	"github.com/liangjfblue/gpusher/gateway/common"
-	"github.com/liangjfblue/gpusher/gateway/transport"
+	"github.com/liangjfblue/gpusher/gateway/service/transport"
 
 	"github.com/liangjfblue/gpusher/gateway/config"
 )
@@ -33,7 +35,7 @@ type Server struct {
 	rpcTransport transport.ITransport
 }
 
-func NewServer(c *config.Config, serviceName string) IServer {
+func NewServer(c *config.Config, serviceName string) server.IServer {
 	s := new(Server)
 
 	s.config = c

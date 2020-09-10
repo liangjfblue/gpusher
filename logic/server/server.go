@@ -14,7 +14,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/liangjfblue/gpusher/common/server"
 	"github.com/liangjfblue/gpusher/logic/api"
+	"github.com/liangjfblue/gpusher/logic/models"
 
 	"github.com/liangjfblue/gpusher/logic/service"
 
@@ -33,7 +35,7 @@ type Server struct {
 	serviceName string
 }
 
-func NewServer(c *config.Config, serviceName string) IServer {
+func NewServer(c *config.Config, serviceName string) server.IServer {
 	s := new(Server)
 
 	s.config = c
@@ -57,6 +59,12 @@ func (s *Server) Init() error {
 	//初始化message rpc客户端
 	if err := api.InitMessageClientRpc(ctx, etcdAddr, common.MessageServiceName); err != nil {
 		log.GetLogger(common.LogicLog).Debug("logic rpc to message err:%s", err.Error())
+		return err
+	}
+
+	redisAddr := strings.Split(s.config.Redis.Host, ",")
+	if err := models.InitRedisModel(redisAddr); err != nil {
+		log.GetLogger(common.LogicLog).Debug("init redis err:%s", err.Error())
 		return err
 	}
 

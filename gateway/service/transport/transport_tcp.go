@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
@@ -33,17 +34,25 @@ var (
 
 type tcpTransport struct {
 	opts Options
+	pool sync.Pool
 }
 
 func NewTcpTransport(opts ...Option) ITransport {
 	t := new(tcpTransport)
 	t.opts = defaultOptions
+	t.pool.New = func() interface{} {
+		return t.allocateWrapConn()
+	}
 
 	for _, o := range opts {
 		o(&t.opts)
 	}
 
 	return t
+}
+
+func (t *tcpTransport) allocateWrapConn() *connWrapper {
+	return &connWrapper{}
 }
 
 func (t *tcpTransport) Init(opts ...Option) {
@@ -105,7 +114,13 @@ func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
 			return err
 		}
 
-		go t.dealTCPConn(ctx, wrapConn(conn))
+		//use connWrapper object pool
+		connWrapper := t.pool.Get().(*connWrapper)
+		connWrapper.setWrapConn(conn)
+
+		go t.ioHandle(ctx, wrapConn(conn))
+
+		t.pool.Put(connWrapper)
 	}
 }
 
@@ -123,9 +138,10 @@ func (t *tcpTransport) setConn(conn *net.TCPConn) (*net.TCPConn, error) {
 	return conn, nil
 }
 
-func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
+//ioHandle 处理用户io事件
+func (t *tcpTransport) ioHandle(ctx context.Context, conn *connWrapper) {
 	defer func() {
-		conn.Close()
+		_ = conn.Close()
 		if err := recover(); err != nil {
 			log.GetLogger(common.GatewayLog).Error("client error: %s", err)
 		}
@@ -178,9 +194,10 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 			break
 		}
 
-		if codec.IsHeartBeatMsg(framer) {
+		switch codec.GetMsgType(framer) {
+		case codec.HeartbeatMsg:
 			cc := codec.GetCodec(codec.Default)
-			resp, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
+			resp, err := cc.Encode(&codec.FrameHeader{MsgType: codec.HeartbeatMsg}, nil)
 			if err != nil {
 				log.GetLogger(common.GatewayLog).Error("codec Encode data err:%s", err.Error())
 				return
@@ -190,14 +207,22 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 				log.GetLogger(common.GatewayLog).Error("conn write HeartbeatReply, err:%s", err.Error())
 				return
 			}
+		case codec.MsgAckMsg:
+			//TODO 客户端确认消费, rpc到logic确认
+		case codec.SyncOfflineMsg:
+		//TODO 获取离线消息
+		default:
+			log.GetLogger(common.GatewayLog).Error("the msg type not support")
 		}
 	}
 }
 
+//read 读完整一帧数据
 func (t *tcpTransport) read(conn *connWrapper) ([]byte, error) {
 	return conn.framer.ReadFramer()
 }
 
+//loginConn 用户连接后必须发送特定一帧数据表示连接初始化
 func (t *tcpTransport) loginConn(conn *connWrapper) (*proto.ConnPayload, error) {
 	//读取连接client信息
 	framer, err := t.read(conn)
