@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/liangjfblue/gpusher/gateway/service/connect"
@@ -33,17 +34,25 @@ var (
 
 type tcpTransport struct {
 	opts Options
+	pool sync.Pool
 }
 
 func NewTcpTransport(opts ...Option) ITransport {
 	t := new(tcpTransport)
 	t.opts = defaultOptions
+	t.pool.New = func() interface{} {
+		return t.allocateWrapConn()
+	}
 
 	for _, o := range opts {
 		o(&t.opts)
 	}
 
 	return t
+}
+
+func (t *tcpTransport) allocateWrapConn() *connWrapper {
+	return &connWrapper{}
 }
 
 func (t *tcpTransport) Init(opts ...Option) {
@@ -105,7 +114,13 @@ func (t *tcpTransport) serve(ctx context.Context, lis net.Listener) error {
 			return err
 		}
 
+		//use connWrapper object pool
+		connWrapper := t.pool.Get().(*connWrapper)
+		connWrapper.setWrapConn(conn)
+
 		go t.ioHandle(ctx, wrapConn(conn))
+
+		t.pool.Put(connWrapper)
 	}
 }
 
