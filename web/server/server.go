@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/liangjfblue/gpusher/logic/server"
+
 	"github.com/liangjfblue/gpusher/web/models"
 
 	"github.com/liangjfblue/gpusher/web/common"
@@ -23,7 +25,7 @@ type Server struct {
 	Router *router.Router
 }
 
-func NewServer(config *config.Config) *Server {
+func NewServer(config *config.Config) server.IServer {
 	return &Server{
 		config: config,
 		Router: router.NewRouter(),
@@ -48,6 +50,8 @@ func (s *Server) Init() error {
 	if err := q.Init(); err != nil {
 		return err
 	}
+
+	models.InitMysqlPool(&s.config.Mysql)
 
 	//推送者
 	service.RegisterPush("kafka", service.NewDefaultPush(q))

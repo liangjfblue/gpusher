@@ -13,6 +13,7 @@ type Config struct {
 	Kafka
 	Redis
 	Etcd
+	Mysql
 }
 
 type Server struct {
@@ -34,6 +35,15 @@ type Redis struct {
 
 type Etcd struct {
 	Host string
+}
+
+type Mysql struct {
+	Addr         string
+	Db           string
+	User         string
+	Password     string
+	MaxIdleConns int
+	MaxOpenConns int
 }
 
 var (

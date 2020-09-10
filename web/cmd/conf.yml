@@ -13,3 +13,11 @@ redis:
 
 etcd:
   host: "172.16.7.16:9002,172.16.7.16:9004,172.16.7.16:9006"
+
+mysql:
+  addr: 172.16.7.16:3306
+  db: db_gpusher
+  user: root
+  password: 123456
+  maxIdleConns: 10
+  maxOpenConns: 20

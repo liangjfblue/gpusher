@@ -43,8 +43,13 @@ func Token(c *gin.Context) {
 		return
 	}
 
-	//TODO 查找数据库,判断用户
-	if req.Username != "test" && req.Password != "123456" {
+	user, err := models.GetTBUser(map[string]interface{}{"username": req.Username})
+	if err != nil {
+		result.Failure(c, ErrUserNotFound)
+		return
+	}
+
+	if req.Password != user.Password {
 		result.Failure(c, ErrUserNotFound)
 		return
 	}

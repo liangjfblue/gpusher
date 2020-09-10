@@ -174,15 +174,10 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 			if err == io.EOF {
 				err = nil
 				log.GetLogger(common.GatewayLog).Warn("client conn close")
-
-				//rpc message删除路由
-				if err := message.DeleteGatewayUUID(connPayload.UUID); err != nil {
-					log.GetLogger(common.GatewayLog).Error("DeleteGatewayUUID err:%s", err.Error())
-				}
 			} else {
 				log.GetLogger(common.GatewayLog).Error("for read err:%s", err.Error())
 			}
-			break
+			goto EXIT
 		}
 
 		if codec.IsHeartBeatMsg(framer) {
@@ -190,12 +185,12 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 			resp, err := cc.Encode(&codec.FrameHeader{MsgType: 0x01}, nil)
 			if err != nil {
 				log.GetLogger(common.GatewayLog).Error("codec Encode data err:%s", err.Error())
-				return
+				goto EXIT
 			}
 
 			if _, err := conn.Conn.Write(resp); err != nil {
 				log.GetLogger(common.GatewayLog).Error("conn write HeartbeatReply, err:%s", err.Error())
-				return
+				goto EXIT
 			}
 
 			//TODO rpc to message 续期redis的路由, 防止gateway还保留旧的路由映射
@@ -203,6 +198,12 @@ func (t *tcpTransport) dealTCPConn(ctx context.Context, conn *connWrapper) {
 				log.GetLogger(common.GatewayLog).Error("ExpireGatewayUUID err:%s", err.Error())
 			}
 		}
+	}
+
+EXIT:
+	//rpc message删除路由
+	if err := message.DeleteGatewayUUID(connPayload.UUID); err != nil {
+		log.GetLogger(common.GatewayLog).Error("DeleteGatewayUUID err:%s", err.Error())
 	}
 }
 
